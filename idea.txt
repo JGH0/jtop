@@ -1,0 +1,22 @@
+command line program which will be downloaded over a custom repo in AUR.
+Webside for the repo will be self hosted.
+
+Windows will have an .EXE
+
+the program will be java
+
+Eine Lehrperson lädt eine .zip Datei herunter in den Ordner “C:\test”
+• Die Applikation wird in den Ordner kopiert
+• Der Lehrer erstellt einmalig eine Klassenliste. Das Format ist frei wählbar.
+• Programm Ablauf:
+o Klassenlisten Datei einlesen
+o Zip Datei ausfindig machen und entpacken
+o Alle entpackten Ordner einlesen.
+o Format für jeden Ordner muss korrekt sein
+“${Name}_${Vorname}_KW${Kalenderwoche}”
+o Der entsprechende Ordner wird verschoben/unbenannt nach
+“C:\Aufgaben\${Name}_${Vorname}\${KW}\”.
+o Eine Übersicht ausgeben welche Dateien kopiert wurden.
+o Eine Übersicht ausgeben welche Schüler nichts abgegeben haben
+o Gezielte, Nützliche Log ausgaben während des gesamten
+Programmablaufs.
