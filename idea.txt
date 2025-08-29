@@ -1,3 +1,0 @@
-make a top like program
-Name: jtop
-Features: Simular to Taskmanger (Windows)
