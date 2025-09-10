@@ -1,8 +1,8 @@
 # jtop - A Java-based System Monitoring Tool
-=============================================
 
-Note: This project is not related to the Python-based jtop for NVIDIA Jetson devices (https://rnext.it/jetson_stats/)
+\=============================================
 
+Note: This project is not related to the Python-based jtop for NVIDIA Jetson devices ([https://rnext.it/jetson\_stats/](https://rnext.it/jetson_stats/))
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Java Version](https://img.shields.io/badge/Java-21%2B-orange.svg)](https://www.java.com/en/)
@@ -25,7 +25,6 @@ jtop is a lightweight, terminal-based system monitoring tool written in Java. It
 * Linux (primary target)
 * Other platforms (e.g. macOS, freeBSD) may be supported in the future, pending compatibility testing and development.
 
-
 ## Getting Started
 
 ### Prerequisites
@@ -33,12 +32,60 @@ jtop is a lightweight, terminal-based system monitoring tool written in Java. It
 * Java 21+ installed on your system
 * Linux platform
 
-### Building and Running
+### Building and Running Locally
 
-1. Clone the repository: `git clone https://github.com/4a-47-48//jtop.git`
-2. Navigate to the project directory: `cd jtop`
-3. Compile the code: `javac src/*.java`
-4. Run the application: `java Main`
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/4a-47-48/jtop.git
+   cd jtop
+   ```
+
+2. Compile the code:
+
+   ```bash
+   javac src/*.java
+   ```
+
+3. Run the application:
+
+   ```bash
+   java Main
+   ```
+
+### System-wide Installation
+
+To install jtop globally so that it can be run from any terminal:
+
+1. Clone the repository (if not done already):
+
+   ```bash
+   git clone https://github.com/4a-47-48/jtop.git
+   cd jtop
+   ```
+
+2. Build the project using the provided build script:
+
+   ```bash
+   ./build.sh
+   ```
+
+3. Install globally (requires root privileges):
+
+   ```bash
+   sudo ./install.sh
+   ```
+
+4. Run jtop from anywhere:
+
+   ```bash
+   jtop
+   ```
+
+**Notes:**
+
+* The `build.sh` script compiles all Java source files and creates an executable `jtop.jar`.
+* The `install.sh` script copies `jtop.jar` to `/usr/local/lib/jtop` and installs a wrapper script in `/usr/local/bin` for easy execution.
 
 ### Usage
 
@@ -55,7 +102,6 @@ jtop is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 ## Author
 
 * Jürg Georg Hallenbarter
-* Date: 03.09.2025
 
 ## Note
 
