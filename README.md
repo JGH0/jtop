@@ -1,6 +1,9 @@
 # jtop - A Java-based System Monitoring Tool
 =============================================
 
+Note: This project is not related to the Python-based jtop for NVIDIA Jetson devices (https://rnext.it/jetson_stats/)
+
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Java Version](https://img.shields.io/badge/Java-21%2B-orange.svg)](https://www.java.com/en/)
 [![Platform](https://img.shields.io/badge/Platform-Linux-brightgreen.svg)](https://www.linux.org/)
@@ -44,10 +47,6 @@ jtop provides a simple and intuitive interface for system monitoring. Use the fo
 * `j`/`k`: Scroll up/down
 * `Enter`: Scroll entire row
 * `q` or `Ctrl+C`: Quit
-
-## Contributing
-
-Contributions are welcome! If you'd like to report an issue or submit a pull request, please visit our [GitHub repository](https://github.com/your-username/jtop).
 
 ## License
 
