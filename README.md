@@ -91,6 +91,7 @@ To install jtop globally so that it can be run from any terminal:
 
 jtop provides a simple and intuitive interface for system monitoring. Use the following keys to navigate:
 
+* `↑`/`↓` (arrow keys): Scroll up/down
 * `j`/`k`: Scroll up/down
 * `Enter`: Scroll entire row
 * `q` or `Ctrl+C`: Quit
