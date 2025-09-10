@@ -50,7 +50,7 @@ jtop is a lightweight, terminal-based system monitoring tool written in Java. It
 3. Run the application:
 
    ```bash
-   java Main
+   java src/Main
    ```
 
 ### System-wide Installation
@@ -64,19 +64,25 @@ To install jtop globally so that it can be run from any terminal:
    cd jtop
    ```
 
-2. Build the project using the provided build script:
+2. Make the build and install scripts executable:
+
+   ```bash
+   chmod +x build.sh install.sh
+   ```
+
+3. Build the project using the provided build script:
 
    ```bash
    ./build.sh
    ```
 
-3. Install globally (requires root privileges):
+4. Install globally (requires root privileges):
 
    ```bash
    sudo ./install.sh
    ```
 
-4. Run jtop from anywhere:
+5. Run jtop from anywhere:
 
    ```bash
    jtop
@@ -91,7 +97,6 @@ To install jtop globally so that it can be run from any terminal:
 
 jtop provides a simple and intuitive interface for system monitoring. Use the following keys to navigate:
 
-* `↑`/`↓` (arrow keys): Scroll up/down
 * `j`/`k`: Scroll up/down
 * `Enter`: Scroll entire row
 * `q` or `Ctrl+C`: Quit
