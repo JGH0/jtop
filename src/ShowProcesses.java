@@ -6,11 +6,11 @@ public class ShowProcesses{
 		PID, NAME, PATH, USER, CPU, MEMORY, DISK_READ, DISK_WRITE, NETWORK
 	}
 
-	private final List<InfoType> infoTypes;  // preserves user order, allows duplicates
-	private final int pageSize;			   // number of visible rows
-	private int scrollIndex = 0;			  // top row index for scrolling
+	private final List<InfoType> infoTypes; // preserves user order
+	private final int pageSize; // number of visible rows
+	private int scrollIndex = 0; // top row index for scrolling
 	private static final int DEFAULT_CELL_WIDTH = 25; // default column width
-	private static final int SINGLE_COL_WIDTH = 10;   // width if only 1 column
+	private static final int SINGLE_COL_WIDTH = 10; // width if only 1 column
 
 	public ShowProcesses(int pageSize, InfoType... infos){
 		this.pageSize = pageSize;
