@@ -48,23 +48,24 @@ public class ShowProcesses{
 		}
 
 		// Footer
-		System.out.printf("-- Showing %d-%d of %d --\n", scrollIndex + 1, end, total);
+		TerminalSize terminalSize = new TerminalSize();
+		System.out.printf("\r-- Showing %d-%d of %d --\n", scrollIndex + 1, end, total);
 		System.out.println("\rUse j/k to scroll, Enter to scroll entire row, 'q' or Ctrl+C to quit");
 	}
 
-	private void printProcessRow(ProcessHandle ph){
+	private void printProcessRow(ProcessHandle processHandle){
 		try{
-			ProcessHandle.Info info = ph.info();
+			ProcessHandle.Info info = processHandle.info();
 			List<String> row = new ArrayList<>();
 
 			for (InfoType type : infoTypes){
 				switch (type){
-					case PID: row.add(truncate(String.valueOf(ph.pid()))); break;
-					case NAME: row.add(truncate(PathInfo.getName(ph.pid()))); break;
-					case PATH: row.add(truncate(PathInfo.getPath(ph.pid()))); break;
+					case PID: row.add(truncate(String.valueOf(processHandle.pid()))); break;
+					case NAME: row.add(truncate(PathInfo.getName(processHandle.pid()))); break;
+					case PATH: row.add(truncate(PathInfo.getPath(processHandle.pid()))); break;
 					case USER: row.add(truncate(info.user().orElse("Unknown"))); break;
-					case CPU: row.add(truncate(String.valueOf(CpuInfo.getCpuPercent(ph.pid())))); break;
-					case MEMORY: row.add(truncate(String.valueOf(MemoryInfo.getMemoryKb(ph.pid())))); break;
+					case CPU: row.add(truncate(String.valueOf(CpuInfo.getCpuPercent(processHandle.pid())))); break;
+					case MEMORY: row.add(truncate(String.valueOf(MemoryInfo.getMemoryKb(processHandle.pid())))); break;
 					case DISK_READ: row.add("TODO_R"); break;
 					case DISK_WRITE: row.add("TODO_W"); break;
 					case NETWORK: row.add("TODO_NET"); break;
@@ -75,16 +76,16 @@ public class ShowProcesses{
 	}
 
 	private void printRow(List<String> cells){
-		StringBuilder sb = new StringBuilder();
+		StringBuilder stringBuilder = new StringBuilder();
 		int width = (cells.size() == 1) ? SINGLE_COL_WIDTH : DEFAULT_CELL_WIDTH;
 
 		for (String c : cells){
-			sb.append(String.format("%-" + width + "s", truncate(c, width)));
+			stringBuilder.append(String.format("%-" + width + "s", truncate(c, width)));
 		}
 
 		// Move cursor to start of line and print row
-		System.out.print("\r"); 
-		System.out.println(sb.toString());
+		System.out.print("\r");
+		System.out.println(stringBuilder.toString());
 	}
 
 
