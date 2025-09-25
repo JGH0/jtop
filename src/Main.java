@@ -5,6 +5,7 @@ public class Main{
 	public static void main(String[] args) throws IOException, InterruptedException{
 		TerminalSize terminalSize = new TerminalSize();
 		int pageSize = terminalSize.getRows() -4; // rows visible at a time
+		Config config = new Config();
 		ShowProcesses showProcesses = new ShowProcesses(
 				pageSize,
 				ShowProcesses.InfoType.PID,
