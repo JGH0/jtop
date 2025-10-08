@@ -3,8 +3,8 @@
 
 # Ensure running as root
 if [[ $EUID -ne 0 ]]; then
-   echo "Please run as root to install globally."
-   exit 1
+	echo "Please run as root to install globally."
+	exit 1
 fi
 
 # Create installation directories

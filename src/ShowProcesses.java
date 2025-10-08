@@ -112,15 +112,15 @@ public class ShowProcesses {
 		// Print header
 		List<String> headers = new ArrayList<>();
 		for (InfoType type : infoTypes) {
-		    String name = type.name();
+			String name = type.name();
 			if (type == InfoType.CPU || type == InfoType.MEMORY) {
 				name += " %";
 			}
-		    if (type == sortBy) {
-		        // Add sorting arrow depending on sortAsc
-		        String sortingArrow = sortAsc ? " ^" : " v";
-		        name += sortingArrow; // todo: sortingArrowColor + triangle + headerColor;
-		    }
+			if (type == sortBy) {
+				// Add sorting arrow depending on sortAsc
+				String sortingArrow = sortAsc ? " ^" : " v";
+				name += sortingArrow; // todo: sortingArrowColor + triangle + headerColor;
+			}
 			headers.add(name);
 		}
 		printRow(headerColor, headers);
