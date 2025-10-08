@@ -37,7 +37,7 @@ jtop is a lightweight, terminal-based system monitoring tool written in Java. It
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/4a-47-48/jtop.git
+   git clone https://github.com/JGH0/jtop.git
    cd jtop
    ```
 
@@ -60,7 +60,7 @@ To install jtop globally so that it can be run from any terminal:
 1. Clone the repository (if not done already):
 
    ```bash
-   git clone https://github.com/4a-47-48/jtop.git
+   git clone https://github.com/JGH0/jtop.git
    cd jtop
    ```
 

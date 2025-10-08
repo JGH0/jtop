@@ -6,20 +6,22 @@ public class ShowProcesses {
 	public enum InfoType {
 		PID, NAME, PATH, USER, CPU, MEMORY, DISK_READ, DISK_WRITE, NETWORK
 	}
-
 	private final List<InfoType> infoTypes;	// preserves user order
 	private int pageSize;					// number of visible rows
 	private int scrollIndex = 0;			// top row index for scrolling
 	private int cellWidth;					// column width
-	private InfoType sortBy = InfoType.CPU;	// default sort
-	private boolean sortAsc = false;			// ascending or descending
-	private String keyBindings = "\rUse j/k to scroll, Enter to scroll entire row, 'q' or Ctrl+C to quit";
 
-	private String tableColor = "\033[40m" + "\033[37m";
-	private String headerColor = "\033[47m" + "\033[30m";
-	private String footerColor = "\033[41m" + "\033[37m";
-	private String sortingArrowColor = "\033[31m";
-	private String clearStyling = "\033[0m";
+	Config config = new Config();
+	private InfoType sortBy = InfoType.CPU;	// default sort
+	private boolean sortAsc = config.getBoolean("table.sorting.ASC", true); // ascending or descending
+
+	private final String keyBindings = config.getString("footer.text.keybindings", "Use j/k to scroll, Enter to scroll entire row, 'q' or Ctrl+C to quit");
+
+	private final String tableColor = config.getString("table.color", "\033[40m" + "\033[37m");
+	private final String headerColor = config.getString("header.color", "\033[47m" + "\033[30m");
+	private final String footerColor = config.getString("footer.color", "\033[41m" + "\033[37m");
+	private final String sortingArrowColor = "\033[31m";
+	private final String clearStyling = "\033[0m";
 
 	public ShowProcesses(InfoType... infos) {
 		infoTypes = new ArrayList<>();
@@ -134,7 +136,7 @@ public class ShowProcesses {
 		String spaces = " ".repeat(Math.max(0, (terminalSize.getColumns() - 25) / 2));
 		System.out.printf("\r" + spaces + footerColor + "-- Showing %d-%d of %d --" + clearStyling + "\n",
 				scrollIndex + 1, end, total);
-		System.out.print(this.keyBindings);
+		System.out.print("\r" + keyBindings);
 	}
 
 	private void printProcessRow(ProcessRow row) {
