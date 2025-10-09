@@ -75,7 +75,7 @@ public class ShowProcesses {
 			try { row.path = truncate(PathInfo.getPath(ph.pid())); } catch (Exception e) { row.path = "?"; }
 			row.user = ph.info().user().orElse("Unknown");
 
-			try { row.cpu = String.valueOf(CpuInfo.getCpuPercent(ph.pid())); } catch (IOException e) { row.cpu = "?"; }
+			try { row.cpu = String.valueOf(CpuInfo.getCpuPercent(ph.pid())); } catch (Exception e) { row.cpu = "?"; }
 			try { row.memory = String.valueOf(MemoryInfo.getMemoryPercent(ph.pid())); } catch (IOException e) { row.memory = "?"; }
 
 			rows.add(row);
