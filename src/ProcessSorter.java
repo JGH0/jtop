@@ -1,7 +1,23 @@
 import java.io.IOException;
 import java.util.Comparator;
 
+/**
+ * Provides sorting utilities for processes.
+ * <p>
+ * Generates comparators to sort {@link ProcessHandle} instances based on
+ * PID, name, path, user, CPU usage, or memory usage. Supports ascending
+ * and descending order.
+ * </p>
+ */
 public class ProcessSorter {
+
+	/**
+	 * Returns a comparator for processes based on the specified sort type.
+	 *
+	 * @param sortBy the {@link InfoType} to sort by (PID, NAME, CPU, MEMORY, etc.)
+	 * @param ascending true for ascending order, false for descending
+	 * @return a {@link Comparator} for {@link ProcessHandle}
+	 */
 	public static Comparator<ProcessHandle> getComparator(InfoType sortBy, boolean ascending) {
 		return (a, b) -> {
 			int cmp = 0;
@@ -20,6 +36,13 @@ public class ProcessSorter {
 		};
 	}
 
+	/**
+	 * Compares two strings in a case-insensitive manner, treating null as empty.
+	 *
+	 * @param a first string
+	 * @param b second string
+	 * @return comparison result
+	 */
 	private static int safeCompare(String a, String b) {
 		if (a == null) a = "";
 		if (b == null) b = "";

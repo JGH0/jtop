@@ -2,8 +2,25 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 
+/**
+ * Provides system temperature readings from hardware sensors.
+ * <p>
+ * Temperature sources:
+ * <ul>
+ *	 <li>Primary: /sys/class/hwmon</li>
+ *	 <li>Fallback: /sys/class/thermal</li>
+ * </ul>
+ * Each temperature is returned in degrees Celsius.
+ */
 public class TemperatureInfo {
 
+	/**
+	 * Retrieves a map of all detected temperatures on the system.
+	 *
+	 * @return Map where the key is a sensor name (e.g., "coretemp:Core 0")
+	 *		 and the value is the temperature in °C.
+	 * @throws IOException if the sensor directories cannot be read
+	 */
 	public static Map<String, Double> getTemperatures() throws IOException {
 		Map<String, Double> temps = new LinkedHashMap<>();
 
@@ -49,7 +66,13 @@ public class TemperatureInfo {
 		return temps;
 	}
 
-	// --- Helper to read and trim text from file, with fallback default ---
+	/**
+	 * Reads a file and trims its content.
+	 *
+	 * @param path Path to read
+	 * @param fallback Value to return if the file cannot be read
+	 * @return Trimmed file content or fallback
+	 */
 	private static String readTrimmed(Path path, String fallback) {
 		try {
 			return Files.exists(path) ? Files.readString(path).trim() : fallback;
@@ -58,7 +81,13 @@ public class TemperatureInfo {
 		}
 	}
 
-	// --- Helper to read temperature in °C (converts from millidegree) ---
+	/**
+	 * Reads a temperature from a file in millidegrees Celsius
+	 * and converts it to degrees Celsius.
+	 *
+	 * @param path Path to the temperature file
+	 * @return Temperature in °C, or NaN if unreadable
+	 */
 	private static double readTempMilliC(Path path) {
 		try {
 			String str = Files.readString(path).trim();

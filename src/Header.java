@@ -1,11 +1,41 @@
 import java.util.Map;
+
+/**
+ * Handles rendering of the terminal interface header.
+ * <p>
+ * Displays key system information such as uptime, CPU usage, memory usage,
+ * load average, and temperatures of available sensors.
+ * The header is displayed on a single line with ANSI color formatting.
+ * </p>
+ */
 public class Header {
 
+	/** ANSI reset code to restore default terminal formatting. */
 	private static final String RESET = "\033[0m";
-	private static final String HEADER_BG = "\033[44m";  // blue background
-	private static final String HEADER_FG = "\033[97m";  // bright white text
 
-	// Draw header on a single line
+	/** ANSI escape code for header background color (blue). */
+	private static final String HEADER_BG = "\033[44m";
+
+	/** ANSI escape code for header foreground color (bright white). */
+	private static final String HEADER_FG = "\033[97m";
+
+	/**
+	 * Draws the header line on the terminal.
+	 * <p>
+	 * Displays:
+	 * <ul>
+	 *	 <li>System uptime in hours</li>
+	 *	 <li>Load average from /proc/loadavg</li>
+	 *	 <li>CPU usage percentage</li>
+	 *	 <li>Memory usage percentage and absolute values (GB)</li>
+	 *	 <li>Temperatures of available sensors (up to 3 to avoid overflow)</li>
+	 * </ul>
+	 * </p>
+	 * <p>
+	 * Automatically truncates the header to the terminal width.
+	 * Any errors during data retrieval are caught and displayed as a message.
+	 * </p>
+	 */
 	public static void draw() {
 		try {
 			double uptime = Uptime.getSystemUptime('h'); // hours
@@ -45,7 +75,14 @@ public class Header {
 			System.out.println(HEADER_BG + HEADER_FG + " Header error: " + e.getMessage() + RESET);
 		}
 	}
+
+	/**
+	 * Returns the number of terminal rows occupied by the header.
+	 * Currently returns 1, but this may change if the header is split into multiple lines.
+	 *
+	 * @return number of rows occupied by the header
+	 */
 	public static int getRowsCount() {
-		return 1;// in future updates the header can be split into multiple lines
+		return 1;
 	}
 }

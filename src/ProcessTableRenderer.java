@@ -1,6 +1,17 @@
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Responsible for rendering the process table in the terminal.
+ * <p>
+ * This class handles:
+ * <ul>
+ *     <li>Color formatting for header, footer, and table rows.</li>
+ *     <li>Column alignment based on terminal width and cell size.</li>
+ *     <li>Displaying keybindings and scrolling status.</li>
+ * </ul>
+ * </p>
+ */
 public class ProcessTableRenderer {
 	private final String tableColor;
 	private final String headerColor;
@@ -12,6 +23,13 @@ public class ProcessTableRenderer {
 	private final int cellWidth;
 	private final int pageSize;
 
+	/**
+	 * Initializes the table renderer with configuration and layout settings.
+	 *
+	 * @param config configuration object containing color settings and footer text
+	 * @param cellWidth width of each column in characters
+	 * @param pageSize number of rows visible at a time
+	 */
 	public ProcessTableRenderer(Config config, int cellWidth, int pageSize) {
 		this.tableColor = config.getString("table.color", "\033[40m\033[37m");
 		this.headerColor = config.getString("header.color", "\033[47m\033[30m");
@@ -23,6 +41,15 @@ public class ProcessTableRenderer {
 		this.pageSize = pageSize;
 	}
 
+	/**
+	 * Draws the process table on the terminal.
+	 *
+	 * @param processes the list of processes to display
+	 * @param infoTypes the columns to show (PID, NAME, CPU, etc.)
+	 * @param sortBy the column currently used for sorting
+	 * @param sortAsc true if sorting ascending, false if descending
+	 * @param scrollIndex starting index for visible rows
+	 */
 	public void draw(List<ProcessRow> processes, List<InfoType> infoTypes, InfoType sortBy, boolean sortAsc, int scrollIndex) {
 		TerminalSize terminalSize = new TerminalSize();
 		int total = processes.size();
@@ -43,6 +70,9 @@ public class ProcessTableRenderer {
 		System.out.print("\r" + keyBindings);
 	}
 
+	/**
+	 * Prints the table header with sorting indicators.
+	 */
 	private void printHeader(List<InfoType> infoTypes, InfoType sortBy, boolean sortAsc) {
 		List<String> headers = new ArrayList<>();
 		for (InfoType type : infoTypes) {
@@ -54,6 +84,9 @@ public class ProcessTableRenderer {
 		printRow(headerColor, headers);
 	}
 
+	/**
+	 * Prints a single row of process data.
+	 */
 	private void printProcessRow(ProcessRow row, List<InfoType> infoTypes) {
 		List<String> cells = new ArrayList<>();
 		for (InfoType type : infoTypes) {
@@ -73,6 +106,9 @@ public class ProcessTableRenderer {
 		printRow("", cells);
 	}
 
+	/**
+	 * Prints a row with the given color and cells.
+	 */
 	private void printRow(String color, List<String> cells) {
 		StringBuilder sb = new StringBuilder();
 		for (String c : cells) {
@@ -81,6 +117,9 @@ public class ProcessTableRenderer {
 		System.out.println("\r" + tableColor + color + sb + clearStyling);
 	}
 
+	/**
+	 * Truncates a string to the given width.
+	 */
 	private String truncate(String s, int width) {
 		if (s == null) return "";
 		if (s.length() > width - 1) return s.substring(0, width - 1);
