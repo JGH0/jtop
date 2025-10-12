@@ -7,13 +7,13 @@ public class Main{
 		int pageSize = terminalSize.getRows() -3; // rows visible at a time
 		Config config = new Config();
 		ShowProcesses showProcesses = new ShowProcesses(
-				ShowProcesses.InfoType.PID,
-				ShowProcesses.InfoType.NAME,
-				ShowProcesses.InfoType.USER,
-				ShowProcesses.InfoType.CPU,
-				ShowProcesses.InfoType.MEMORY
-				//ShowProcesses.InfoType.DISK_READ,
-				//ShowProcesses.InfoType.DISK_WRITE
+				InfoType.PID,
+				InfoType.NAME,
+				InfoType.USER,
+				InfoType.CPU,
+				InfoType.MEMORY
+				//InfoType.DISK_READ,
+				//InfoType.DISK_WRITE
 		);
 
 		// Enable raw input (no Enter buffering)
@@ -34,8 +34,13 @@ public class Main{
 						Thread.currentThread().interrupt();
 					}
 					if(refresh.get()){
-						showProcesses.refreshProcesses();
-						showProcesses.draw();
+						try {
+							showProcesses.refreshProcesses();
+							showProcesses.draw();
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					}
 				}
 			});
@@ -103,7 +108,7 @@ public class Main{
 						break;
 				}
 			}
-		}catch(IOException e){
+		}catch(Exception e){
 			// Ctrl+C was pressed
 			return;
 		}finally{

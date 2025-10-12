@@ -1,0 +1,3 @@
+public enum InfoType {
+	PID, NAME, PATH, USER, CPU, MEMORY, DISK_READ, DISK_WRITE, NETWORK
+}
