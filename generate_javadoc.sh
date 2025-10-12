@@ -80,8 +80,17 @@ fi
 
 # --- Generate JavaDoc ---
 echo "Generating JavaDoc..."
+rm -rf "$DOC_DIR"
 mkdir -p "$DOC_DIR"
-javadoc -d "$DOC_DIR" -sourcepath "$SRC_DIR" -subpackages . -private -author -version
 
-echo "JavaDoc generated successfully!"
-echo "Open $DOC_DIR/index.html in your browser to view the documentation."
+if javadoc -quiet -d "$DOC_DIR" \
+	-sourcepath "$SRC_DIR" \
+	-subpackages jtop \
+	-private \
+	-author \
+	-version > /dev/null 2>&1; then
+	echo -e "\033[32mJavaDoc generated successfully!"
+	echo -e "\033[0m→ Open file://$PWD/$DOC_DIR/index.html to view it."
+else
+	echo -e "\033[31mJavaDoc generation failed (check your paths or source)."
+fi

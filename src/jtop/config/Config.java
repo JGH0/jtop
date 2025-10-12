@@ -53,13 +53,13 @@ public class Config {
 	 * Cleans and normalizes a raw configuration value.
 	 * <p>
 	 * Cleaning includes:
+	 * </p>
 	 * <ul>
 	 *	 <li>Removing inline comments starting with '#'</li>
 	 *	 <li>Removing quotes and '+' signs</li>
 	 *	 <li>Replacing escape sequences (033 or \033) with ANSI escape character</li>
 	 *	 <li>Trimming whitespace and spaces immediately after escape codes</li>
 	 * </ul>
-	 * </p>
 	 *
 	 * @param value the raw configuration string
 	 * @return the cleaned value, or {@code null} if the input was {@code null}

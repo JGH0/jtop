@@ -8,13 +8,13 @@ import jtop.core.ShowProcesses;
  * Handles keyboard and mouse input from the user for the process monitor.
  * <p>
  * Interprets key presses for:
+ * </p>
  * <ul>
  *	 <li>Scrolling (Arrow keys, 'j'/'k', mouse wheel)</li>
  *	 <li>Sorting by column (mouse click on header)</li>
  *	 <li>Paging (Enter key)</li>
  *	 <li>Exiting the application ('q' or Ctrl+C)</li>
  * </ul>
- * </p>
  */
 public class InputHandler {
 
@@ -100,12 +100,12 @@ public class InputHandler {
 	 * Handles a mouse event received from the terminal.
 	 * <p>
 	 * Interprets:
+	 * </p>
 	 * <ul>
 	 *	 <li>Left click on header row → changes sorting column</li>
 	 *	 <li>Scroll wheel up → scrolls up</li>
 	 *	 <li>Scroll wheel down → scrolls down</li>
 	 * </ul>
-	 * </p>
 	 *
 	 * @throws Exception if an I/O error occurs while reading mouse input
 	 */

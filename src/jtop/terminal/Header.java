@@ -29,6 +29,7 @@ public class Header {
 	 * Draws the header line on the terminal.
 	 * <p>
 	 * Displays:
+	 * </p>
 	 * <ul>
 	 *	 <li>System uptime in hours</li>
 	 *	 <li>Load average from /proc/loadavg</li>
@@ -36,7 +37,6 @@ public class Header {
 	 *	 <li>Memory usage percentage and absolute values (GB)</li>
 	 *	 <li>Temperatures of available sensors (up to 3 to avoid overflow)</li>
 	 * </ul>
-	 * </p>
 	 * <p>
 	 * Automatically truncates the header to the terminal width.
 	 * Any errors during data retrieval are caught and displayed as a message.

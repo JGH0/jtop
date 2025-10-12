@@ -10,12 +10,12 @@ import java.util.Map;
  * Provides methods to gather memory usage statistics.
  * <p>
  * Reads Linux /proc files to determine:
+ * </p>
  * <ul>
  *	 <li>Total and available system memory</li>
  *	 <li>Memory usage percentage by the system</li>
  *	 <li>Memory usage percentage of a specific process (by PID)</li>
  * </ul>
- * </p>
  */
 public class MemoryInfo {
 
@@ -132,7 +132,9 @@ public class MemoryInfo {
 		throw new IOException("Cannot read total memory from /proc/meminfo");
 	}
 
-	/** Helper: Rounds a double value to the given number of decimal places. */
+	/** Helper: Rounds a double value to the given number of decimal places. 
+	 * @return returns the value to the desired lenght
+	*/
 	private static double round(double val, int decimals) {
 		double factor = Math.pow(10, decimals);
 		return Math.round(val * factor) / factor;

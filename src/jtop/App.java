@@ -14,13 +14,13 @@ import jtop.terminal.TerminalSize;
  * of the terminal-based process monitor.
  * <p>
  * This class is responsible for:
+ * </p>
  * <ul>
  *	 <li>Configuring the terminal (raw input mode and mouse reporting)</li>
  *	 <li>Initializing configuration and display components</li>
  *	 <li>Starting background refresh and input handling threads</li>
  *	 <li>Ensuring proper cleanup and terminal restoration on exit</li>
  * </ul>
- * </p>
  */
 public class App {
 
@@ -57,6 +57,7 @@ public class App {
 	 * Starts the main application loop.
 	 * <p>
 	 * This method:
+	 * </p>
 	 * <ul>
 	 *	 <li>Enables raw input mode and mouse tracking</li>
 	 *	 <li>Draws the initial process table</li>
@@ -64,7 +65,6 @@ public class App {
 	 *	 <li>Delegates user interaction to the {@link InputHandler}</li>
 	 * </ul>
 	 * When the loop ends, terminal settings are restored and mouse reporting is disabled.
-	 * </p>
 	 *
 	 * @throws Exception if an I/O or threading error occurs
 	 */

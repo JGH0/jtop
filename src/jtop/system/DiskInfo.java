@@ -22,11 +22,11 @@ public class DiskInfo {
      * <p>
      * Each entry in the returned map contains the device name as the key,
      * and an array of two long values as the value:
+     * </p>
      * <ul>
      *     <li>index 0 - number of reads completed</li>
      *     <li>index 1 - number of writes completed</li>
      * </ul>
-     * </p>
      *
      * @return a {@link Map} where the key is the device name and the value is a
      *         long array containing [reads, writes]

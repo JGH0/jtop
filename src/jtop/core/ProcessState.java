@@ -11,6 +11,7 @@ import java.io.IOException;
  * </p>
  * <p>
  * Typical Linux process states:
+ * </p>
  * <ul>
  *     <li><b>R</b> - Running</li>
  *     <li><b>S</b> - Sleeping</li>
@@ -19,7 +20,6 @@ import java.io.IOException;
  *     <li><b>Z</b> - Zombie</li>
  *     <li><b>X</b> - Dead</li>
  * </ul>
- * </p>
  */
 public class ProcessState {
 

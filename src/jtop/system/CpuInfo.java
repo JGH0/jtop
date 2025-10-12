@@ -10,12 +10,12 @@ import java.util.Arrays;
  * Provides CPU usage information and statistics for the system and individual processes.
  * <p>
  * Reads data from the <code>/proc</code> filesystem:
+ * </p>
  * <ul>
  *	 <li><code>/proc/[pid]/stat</code> for per-process CPU usage</li>
  *	 <li><code>/proc/stat</code> for overall CPU usage</li>
  *	 <li><code>/proc/loadavg</code> for system load average</li>
  * </ul>
- * </p>
  */
 public class CpuInfo {
 

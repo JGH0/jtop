@@ -9,12 +9,12 @@ import jtop.terminal.TerminalSize;
  * Responsible for rendering the process table in the terminal.
  * <p>
  * This class handles:
+ * </p>
  * <ul>
  *     <li>Color formatting for header, footer, and table rows.</li>
  *     <li>Column alignment based on terminal width and cell size.</li>
  *     <li>Displaying keybindings and scrolling status.</li>
  * </ul>
- * </p>
  */
 public class ProcessTableRenderer {
 	private final String tableColor;
