@@ -121,7 +121,7 @@ public class ShowProcesses {
 			if (type == sortBy) {
 				// Add sorting arrow depending on sortAsc
 				String sortingArrow = sortAsc ? " ^" : " v";
-				name += sortingArrow; // todo: sortingArrowColor + triangle + headerColor;
+				name += sortingArrow; // todo: sortingArrowColor + sortingArrow + headerColor;
 			}
 			headers.add(name);
 		}

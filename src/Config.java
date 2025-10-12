@@ -26,12 +26,37 @@ public class Config {
 		}
 	}
 
+	private String cleanValue(String value) {
+		if (value == null) return null;
+
+		// Remove everything after '#' (inline comment)
+		int commentIndex = value.indexOf('#');
+		if (commentIndex != -1) {
+			value = value.substring(0, commentIndex);
+		}
+
+		// Remove quotes and '+' signs
+		value = value.replace("\"", "").replace("+", "");
+
+		// Replace all 033 or \033 with actual escape character
+		value = value.replaceAll("\\\\?033", "\u001B");
+
+		// Remove spaces **immediately after escape codes** only
+		value = value.replaceAll("(\u001B\\[[0-9;]*m)\\s+", "$1");
+
+		// Trim leading/trailing whitespace from the entire value
+		value = value.strip();
+
+		return value;
+	}
+
 	public String getString(String key, String defaultValue) {
-		return properties.getProperty(key, defaultValue);
+		String value = cleanValue(properties.getProperty(key, defaultValue));
+		return (value != null) ? value : defaultValue;
 	}
 
 	public int getInt(String key, int defaultValue) {
-		String value = properties.getProperty(key);
+		String value = cleanValue(properties.getProperty(key));
 		if (value != null) {
 			try {
 				return Integer.parseInt(value);
@@ -43,14 +68,16 @@ public class Config {
 	}
 
 	public boolean getBoolean(String key, boolean defaultValue) {
-		String value = properties.getProperty(key);
+		String value = cleanValue(properties.getProperty(key));
 		return (value != null) ? Boolean.parseBoolean(value) : defaultValue;
 	}
 
 	public List<String> getList(String key, String separator, List<String> defaultValue) {
-		String value = properties.getProperty(key);
+		String value = cleanValue(properties.getProperty(key));
 		if (value != null) {
-			return Arrays.asList(value.split(separator));
+			String[] parts = value.split(separator);
+			for (int i = 0; i < parts.length; i++) parts[i] = parts[i].strip(); // trim each element
+			return Arrays.asList(parts);
 		}
 		return defaultValue;
 	}
