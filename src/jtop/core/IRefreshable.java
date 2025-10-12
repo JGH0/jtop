@@ -1,3 +1,4 @@
+package jtop.core;
 /**
  * Interface for objects that can be refreshed periodically.
  */

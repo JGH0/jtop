@@ -1,6 +1,13 @@
+package jtop.core;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import jtop.config.Config;
+import jtop.system.CpuInfo;
+import jtop.system.MemoryInfo;
+import jtop.system.PathInfo;
+import jtop.terminal.TerminalSize;
 
 /**
  * Core class responsible for managing, sorting, and displaying running processes.

@@ -1,4 +1,10 @@
+package jtop.terminal;
 import java.util.Map;
+
+import jtop.system.CpuInfo;
+import jtop.system.MemoryInfo;
+import jtop.system.TemperatureInfo;
+import jtop.system.Uptime;
 
 /**
  * Handles rendering of the terminal interface header.
@@ -83,6 +89,6 @@ public class Header {
 	 * @return number of rows occupied by the header
 	 */
 	public static int getRowsCount() {
-		return 1;
+		return 1;//in future there may be multi line header
 	}
 }

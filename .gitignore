@@ -2,4 +2,4 @@ bin/
 .vscode/
 *.class
 *TestFile.java
-docs/
+doc/

@@ -1,3 +1,4 @@
+package jtop.core;
 /**
  * Represents a single process entry in the system.
  * <p>

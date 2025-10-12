@@ -1,5 +1,10 @@
+package jtop.core;
 import java.io.IOException;
 import java.util.Comparator;
+
+import jtop.system.CpuInfo;
+import jtop.system.MemoryInfo;
+import jtop.system.PathInfo;
 
 /**
  * Provides sorting utilities for processes.

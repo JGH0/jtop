@@ -1,5 +1,13 @@
+package jtop;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import jtop.config.Config;
+import jtop.core.InfoType;
+import jtop.core.RefreshThread;
+import jtop.core.ShowProcesses;
+import jtop.terminal.InputHandler;
+import jtop.terminal.TerminalSize;
 
 /**
  * Core application class that initializes and coordinates all major components

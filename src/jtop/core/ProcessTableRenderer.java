@@ -1,5 +1,9 @@
+package jtop.core;
 import java.util.ArrayList;
 import java.util.List;
+
+import jtop.config.Config;
+import jtop.terminal.TerminalSize;
 
 /**
  * Responsible for rendering the process table in the terminal.

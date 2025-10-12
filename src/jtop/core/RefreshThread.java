@@ -1,3 +1,4 @@
+package jtop.core;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**

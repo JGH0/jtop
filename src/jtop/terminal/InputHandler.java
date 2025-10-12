@@ -1,5 +1,8 @@
+package jtop.terminal;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import jtop.core.ShowProcesses;
 
 /**
  * Handles keyboard and mouse input from the user for the process monitor.

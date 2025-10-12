@@ -1,3 +1,4 @@
+package jtop.core;
 /**
  * Enum that defines different system information types
  * (e.g., CPU, Memory, Disk, Network).
