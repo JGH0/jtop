@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jtop.core.ShowProcesses;
+import jtop.core.ProcessTableRenderer;
 
 /**
  * Handles keyboard and mouse input from the user for the process monitor.
@@ -50,7 +51,7 @@ public class InputHandler {
 	 * @throws Exception if an I/O error occurs while reading input
 	 */
 	public void start() throws Exception {
-		int pageSize = terminalSize.getRows() - 3;
+		int pageSize = terminalSize.getRows() - ProcessTableRenderer.getHeaderAndFooterLength();
 		int c;
 
 		while ((c = System.in.read()) != -1) {
@@ -98,6 +99,7 @@ public class InputHandler {
 					if (c == 113 || c == 3) { // 'q' or Ctrl+C
 						return; // exit loop
 					}
+					break;
 			}
 		}
 	}

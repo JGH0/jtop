@@ -1,8 +1,10 @@
 package jtop.core;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Handler;
 
 import jtop.config.Config;
+import jtop.terminal.Header;
 import jtop.terminal.TerminalSize;
 
 /**
@@ -46,6 +48,20 @@ public class ProcessTableRenderer {
 	}
 
 	/**
+	 * Returns the number of lines used by the header and footer.
+	 *
+	 * @return the number of lines used by the header and footer
+	 */
+	public static int getHeaderAndFooterLength() {
+		int length = 0;
+		length += Header.getRowsCount();//header (system information)
+		length += 1;//table headerc (PID, NAME, etc.)
+		length += 1;//table footer (-- Showing x-y of z --)
+		length += 1;//keybindings text (Use j/k to scroll, etc.)
+		return length;
+	}
+
+	/**
 	 * Draws the process table on the terminal.
 	 *
 	 * @param processes the list of processes to display
@@ -63,9 +79,10 @@ public class ProcessTableRenderer {
 		System.out.print("\033[H\033[2J");
 		System.out.flush();
 
-		printHeader(infoTypes, sortBy, sortAsc);
+		Header.draw();// print header
+		printHeader(infoTypes, sortBy, sortAsc);// print table header
 		for (int i = scrollIndex; i < end; i++) {
-			printProcessRow(processes.get(i), infoTypes);
+			printProcessRow(processes.get(i), infoTypes);// print table rows
 		}
 
 		String spaces = " ".repeat(Math.max(0, (terminalSize.getColumns() - 25) / 2));

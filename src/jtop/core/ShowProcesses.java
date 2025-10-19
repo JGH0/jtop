@@ -83,7 +83,7 @@ public class ShowProcesses implements IRefreshable {
 	 */
 	public void draw() throws Exception {
 		TerminalSize terminalSize = new TerminalSize();
-		this.pageSize = terminalSize.getRows() - 3;
+		this.pageSize = terminalSize.getRows() - ProcessTableRenderer.getHeaderAndFooterLength();
 		this.cellWidth = terminalSize.getColumns() / infoTypes.size();
 
 		if (cachedProcesses.isEmpty()) refreshProcesses();
