@@ -8,8 +8,8 @@ import java.util.Optional;
  * Utility class for retrieving battery information on Linux systems.
  * <p>
  * Automatically detects the battery directory under
- * <code>/sys/class/power_supply/</code> (e.g. BAT0, BAT1) and reads
- * the current charge percentage and status.
+ * <code>/sys/class/power_supply/</code> (e.g. BAT0, BAT1)
+ * and exposes percentage, status, voltage, and energy readings.
  */
 public class BatteryInfo {
 
@@ -20,7 +20,7 @@ public class BatteryInfo {
 		try {
 			batteryPath = detectBatteryPath();
 		} catch (IOException e) {
-			// Ignore: handled later when attempting to read values
+			// Will be handled gracefully later
 		}
 	}
 
@@ -49,36 +49,82 @@ public class BatteryInfo {
 	}
 
 	/**
-	 * Gets the current battery charge percentage.
+	 * Reads a value from a given file path inside the battery directory.
 	 *
-	 * @return the battery percentage (0–100)
-	 * @throws IOException if the battery information cannot be read
+	 * @param filename the name of the file to read
+	 * @return the file's trimmed string contents
+	 * @throws IOException if the file cannot be read
+	 */
+	private static String readBatteryFile(String filename) throws IOException {
+		if (batteryPath == null) batteryPath = detectBatteryPath();
+		Path file = batteryPath.resolve(filename);
+		if (!Files.exists(file)) {
+			throw new IOException("Battery attribute not found: " + file);
+		}
+		return Files.readString(file).trim();
+	}
+
+	/**
+	 * Gets the current battery charge percentage (0–100).
 	 */
 	public static int getBatteryPercentage() throws IOException {
-		if (batteryPath == null) batteryPath = detectBatteryPath();
-
-		Path capacityPath = batteryPath.resolve("capacity");
-		String content = Files.readString(capacityPath).trim();
-		return Integer.parseInt(content);
+		return Integer.parseInt(readBatteryFile("capacity"));
 	}
 
 	/**
 	 * Gets the current battery status (e.g. Charging, Discharging, Full).
-	 *
-	 * @return the battery status string
-	 * @throws IOException if the status cannot be read
 	 */
 	public static String getBatteryStatus() throws IOException {
-		if (batteryPath == null) batteryPath = detectBatteryPath();
+		return readBatteryFile("status");
+	}
 
-		Path statusPath = batteryPath.resolve("status");
-		return Files.readString(statusPath).trim();
+	/**
+	 * Gets the current voltage in volts (if available).
+	 *
+	 * @return voltage in volts, or -1 if unavailable
+	 */
+	public static double getVoltage() {
+		try {
+			String content = readBatteryFile("voltage_now");
+			// value is usually in microvolts
+			return Double.parseDouble(content) / 1_000_000.0;
+		} catch (IOException | NumberFormatException e) {
+			return -1;
+		}
+	}
+
+	/**
+	 * Gets the current energy in watt-hours (if available).
+	 *
+	 * @return energy in Wh, or -1 if unavailable
+	 */
+	public static double getEnergy() {
+		try {
+			String content = readBatteryFile("energy_now");
+			// value is usually in microwatt-hours
+			return Double.parseDouble(content) / 1_000_000.0;
+		} catch (IOException | NumberFormatException e) {
+			return -1;
+		}
+	}
+
+	/**
+	 * Gets the current power draw in watts (if available).
+	 *
+	 * @return power in W, or -1 if unavailable
+	 */
+	public static double getPower() {
+		try {
+			String content = readBatteryFile("power_now");
+			// value is usually in microwatts
+			return Double.parseDouble(content) / 1_000_000.0;
+		} catch (IOException | NumberFormatException e) {
+			return -1;
+		}
 	}
 
 	/**
 	 * Checks whether the system has a readable battery directory.
-	 *
-	 * @return true if a battery was detected and is readable
 	 */
 	public static boolean hasBattery() {
 		try {

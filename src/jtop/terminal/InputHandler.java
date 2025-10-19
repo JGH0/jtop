@@ -124,7 +124,7 @@ public class InputHandler {
 
 		switch (cb) {
 			case 0 -> { // Left click
-				if (cy == 1) {
+				if (cy == 1 + Header.getRowsCount()) {
 					showProcesses.changeSortByClick(cx - 1);
 				}
 			}

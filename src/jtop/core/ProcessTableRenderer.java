@@ -24,7 +24,7 @@ public class ProcessTableRenderer {
 	private final String footerColor;
 	private final String clearStyling;
 	private final String sortingArrowColor;
-	private final String keyBindings;
+	private static String keyBindings = "";
 
 	private final int cellWidth;
 	private final int pageSize;
@@ -56,8 +56,8 @@ public class ProcessTableRenderer {
 		int length = 0;
 		length += Header.getRowsCount();//header (system information)
 		length += 1;//table headerc (PID, NAME, etc.)
-		length += 1;//table footer (-- Showing x-y of z --)
-		length += 1;//keybindings text (Use j/k to scroll, etc.)
+		length += "-- Showing abc-def of xyz --".length() / TerminalSize.getColumns() + 1;//table footer (-- Showing x-y of z --)
+		length += keyBindings.length() / TerminalSize.getColumns() + 1;//keybindings text (Use j/k to scroll, etc.)
 		return length;
 	}
 
