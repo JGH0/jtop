@@ -115,6 +115,17 @@ public class ShowProcesses implements IRefreshable {
 	 */
 	public void changeSortByClick(int charPosition) throws Exception {
 		int columnIndex = charPosition / cellWidth;
+		changeSort(columnIndex);
+	}
+
+	/**
+	 * Changes the sorting column based on the index entered.
+	 * Toggles ascending/descending if the same column is clicked again.
+	 *
+	 * @param charPosition Horizontal character position of the click in the terminal
+	 * @throws Exception if refreshing processes fails
+	 */
+	public void changeSort(int columnIndex) throws Exception {
 		if (columnIndex >= 0 && columnIndex < infoTypes.size()) {
 			InfoType newSort = infoTypes.get(columnIndex);
 			sortAsc = (sortBy == newSort) ? !sortAsc : true;

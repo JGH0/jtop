@@ -89,6 +89,12 @@ public class InputHandler {
 					break;
 
 				default:
+					if (c >= 48 && c <= 57) { // 0-9
+						if (c == 48) {
+							c = 58;// 0 acts as 10 and 1 is the first index
+						}
+						showProcesses.changeSort(c - 49);
+					}
 					if (c == 113 || c == 3) { // 'q' or Ctrl+C
 						return; // exit loop
 					}

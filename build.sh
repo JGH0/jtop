@@ -9,7 +9,7 @@ JTOP_NAME="jtop"
 SRC_DIR="src"
 BIN_DIR="bin"
 JAR_FILE="${JTOP_NAME}.jar"
-MAIN_CLASS="Main"
+MAIN_CLASS="${JTOP_NAME}.Main"
 
 # --- Detect package manager ---
 detect_package_manager() {
@@ -83,9 +83,15 @@ if ! command -v javac >/dev/null 2>&1; then
 fi
 
 # --- Build process ---
-echo "Compiling Java sources..."
+echo "Cleaning previous build..."
+rm -rf "$BIN_DIR" "$JAR_FILE"
 mkdir -p "$BIN_DIR"
-javac "$SRC_DIR"/*.java -d "$BIN_DIR"
+
+echo "Compiling Java sources..."
+# The -d flag preserves the package directory structure
+find "$SRC_DIR" -name "*.java" > sources.txt
+javac -d "$BIN_DIR" @sources.txt
+rm sources.txt
 
 echo "Creating JAR file..."
 jar cfe "$JAR_FILE" "$MAIN_CLASS" -C "$BIN_DIR" .
