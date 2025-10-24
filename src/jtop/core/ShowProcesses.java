@@ -86,7 +86,9 @@ public class ShowProcesses implements IRefreshable {
 		this.pageSize = terminalSize.getRows() - ProcessTableRenderer.getHeaderAndFooterLength();
 		this.cellWidth = terminalSize.getColumns() / infoTypes.size();
 
-		if (cachedProcesses.isEmpty()) refreshProcesses();
+		if (cachedProcesses.isEmpty()){
+			refreshProcesses();
+		};
 
 		new ProcessTableRenderer(config, cellWidth, pageSize)
 			.draw(cachedProcesses, infoTypes, sortBy, sortAsc, scrollIndex);

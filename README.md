@@ -11,7 +11,7 @@ Note: This project is not related to the Python-based jtop for NVIDIA Jetson dev
 
 ## Overview
 
-jtop is a lightweight, terminal-based system monitoring tool written in Java. It aims to replicate the basic functionality of the `top` command, providing a modular and tab-based interface for easy system monitoring.
+jtop is a lightweight, terminal-based system monitoring tool written in Java. It aims to replicate the basic functionality of the `top` command, providing a modular interface for easy system monitoring.
 
 ## Features
 
