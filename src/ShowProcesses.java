@@ -1,44 +1,105 @@
-import java.lang.ProcessHandle.Info;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ShowProcesses{
-	public enum InfoType{
+public class ShowProcesses {
+	public enum InfoType {
 		PID, NAME, PATH, USER, CPU, MEMORY, DISK_READ, DISK_WRITE, NETWORK
 	}
 
 	private final List<InfoType> infoTypes; // preserves user order
-	private int pageSize; // number of visible rows
-	private int scrollIndex = 0; // top row index for scrolling
-	private int cellWidth; // column width
+	private int pageSize;				   // number of visible rows
+	private int scrollIndex = 0;			// top row index for scrolling
+	private int cellWidth;				  // column width
+	private InfoType sortBy = InfoType.PID; // default sort
+	private boolean sortAsc = true;		 // ascending or descending
 	private String keyBindings = "\rUse j/k to scroll, Enter to scroll entire row, 'q' or Ctrl+C to quit";
 
-	public ShowProcesses(InfoType... infos){
+	private String backgroundColor = "\033[40m" + "\033[37m";
+	private String headerColor = "\033[47m" + "\033[30m";
+
+	public ShowProcesses(InfoType... infos) {
 		infoTypes = new ArrayList<>();
-		for (InfoType info : infos){
+		for (InfoType info : infos) {
 			infoTypes.add(info);
 		}
 	}
 
-	/** Returns mutable sorted list of processes */
-	private List<ProcessHandle> getProcesses(){
+	// Cache of already prepared rows
+	private List<ProcessRow> cachedProcesses = new ArrayList<>();
+
+	static class ProcessRow {
+		long pid;
+		String name;
+		String path;
+		String user;
+		String cpu;
+		String memory;
+	}
+
+	/** Build the cache of processes (expensive calls only once per refresh). */
+	public void refreshProcesses() {
 		List<ProcessHandle> processes = new ArrayList<>(ProcessHandle.allProcesses().toList());
-		processes.sort((a, b) -> Long.compare(a.pid(), b.pid()));
-		return processes;
+
+		// Sort based on current sort setting
+		processes.sort((a, b) -> {
+			int cmp = 0;
+			try {
+				switch (sortBy) {
+					case PID: cmp = Long.compare(a.pid(), b.pid()); break;
+					case NAME: cmp = safeCompare(PathInfo.getName(a.pid()), PathInfo.getName(b.pid())); break;
+					case PATH: cmp = safeCompare(PathInfo.getPath(a.pid()), PathInfo.getPath(b.pid())); break;
+					case USER: cmp = safeCompare(a.info().user().orElse(""), b.info().user().orElse("")); break;
+					case CPU: cmp = Double.compare(CpuInfo.getCpuPercent(a.pid()), CpuInfo.getCpuPercent(b.pid())); break;
+					case MEMORY: cmp = Long.compare(MemoryInfo.getMemoryKb(a.pid()), MemoryInfo.getMemoryKb(b.pid())); break;
+					default: cmp = 0;
+				}
+			} catch (Exception e) {
+				cmp = 0;
+			}
+			return sortAsc ? cmp : -cmp;
+		});
+
+		// Convert to cached ProcessRow
+		List<ProcessRow> rows = new ArrayList<>();
+		for (ProcessHandle ph : processes) {
+			ProcessRow row = new ProcessRow();
+			row.pid = ph.pid();
+
+			try { row.name = truncate(PathInfo.getName(ph.pid())); } catch (Exception e) { row.name = "?"; }
+			try { row.path = truncate(PathInfo.getPath(ph.pid())); } catch (Exception e) { row.path = "?"; }
+			row.user = ph.info().user().orElse("Unknown");
+
+			try { row.cpu = String.valueOf(CpuInfo.getCpuPercent(ph.pid())); } catch (IOException e) { row.cpu = "?"; }
+			try { row.memory = String.valueOf(MemoryInfo.getMemoryKb(ph.pid())); } catch (IOException e) { row.memory = "?"; }
+
+			rows.add(row);
+		}
+
+		this.cachedProcesses = rows;
+	}
+
+	private int safeCompare(String a, String b) {
+		if (a == null) a = "";
+		if (b == null) b = "";
+		return a.compareToIgnoreCase(b);
 	}
 
 	/** Draws only the visible window starting from scrollIndex */
-	public void draw(){
+	public void draw() {
 		TerminalSize terminalSize = new TerminalSize();
 		// Set page size (-2 for header and footer)
-		int headerAndFooterRows = terminalSize.getRows() - (2 + ((keyBindings.length() + terminalSize.getColumns() - 1) / terminalSize.getColumns()));
+		int headerAndFooterRows = terminalSize.getRows()
+				- (2 + ((keyBindings.length() + terminalSize.getColumns() - 1) / terminalSize.getColumns()));
 		this.pageSize = headerAndFooterRows;
 		// Set column width
 		this.cellWidth = terminalSize.getColumns() / infoTypes.size();
 
-		List<ProcessHandle> processes = getProcesses();
-		int total = processes.size();
+		if (cachedProcesses.isEmpty()) {
+			refreshProcesses();
+		}
 
+		int total = cachedProcesses.size();
 		int end = Math.min(scrollIndex + pageSize, total);
 
 		// Clear screen
@@ -48,75 +109,78 @@ public class ShowProcesses{
 		// Print header
 		List<String> headers = new ArrayList<>();
 		for (InfoType type : infoTypes) headers.add(type.name());
-		printRow(headers);
+		printRow(headerColor, headers);
 
 		// Print visible rows
-		for (int i = scrollIndex; i < end; i++){
-			printProcessRow(processes.get(i));
+		for (int i = scrollIndex; i < end; i++) {
+			printProcessRow(cachedProcesses.get(i));
 		}
 
 		// Footer
-		String spaces = "";
-		for (int i = 0; i < (terminalSize.getColumns() - 25) / 2; i++){
-			spaces += " ";
-		}
+		String spaces = " ".repeat(Math.max(0, (terminalSize.getColumns() - 25) / 2));
 		String BG_RED = "\033[41m";
-		System.out.printf("\r" + spaces + BG_RED + "-- Showing %d-%d of %d --\n", scrollIndex + 1, end, total);
+		System.out.printf("\r" + spaces + BG_RED + "-- Showing %d-%d of %d --" + backgroundColor + "\n",
+				scrollIndex + 1, end, total);
 		System.out.print(this.keyBindings);
 	}
 
-	private void printProcessRow(ProcessHandle processHandle){
-		try{
-			ProcessHandle.Info info = processHandle.info();
-			List<String> row = new ArrayList<>();
-
-			for (InfoType type : infoTypes){
-				switch (type){
-					case PID: row.add(truncate(String.valueOf(processHandle.pid()))); break;
-					case NAME: row.add(truncate(PathInfo.getName(processHandle.pid()))); break;
-					case PATH: row.add(truncate(PathInfo.getPath(processHandle.pid()))); break;
-					case USER: row.add(truncate(info.user().orElse("Unknown"))); break;
-					case CPU: row.add(truncate(String.valueOf(CpuInfo.getCpuPercent(processHandle.pid())))); break;
-					case MEMORY: row.add(truncate(String.valueOf(MemoryInfo.getMemoryKb(processHandle.pid())))); break;
-					case DISK_READ: row.add("TODO_R"); break;
-					case DISK_WRITE: row.add("TODO_W"); break;
-					case NETWORK: row.add("TODO_NET"); break;
-				}
+	private void printProcessRow(ProcessRow row) {
+		List<String> cells = new ArrayList<>();
+		for (InfoType type : infoTypes) {
+			switch (type) {
+				case PID: cells.add(String.valueOf(row.pid)); break;
+				case NAME: cells.add(row.name); break;
+				case PATH: cells.add(row.path); break;
+				case USER: cells.add(row.user); break;
+				case CPU: cells.add(row.cpu); break;
+				case MEMORY: cells.add(row.memory); break;
+				case DISK_READ: cells.add("TODO_R"); break;
+				case DISK_WRITE: cells.add("TODO_W"); break;
+				case NETWORK: cells.add("TODO_NET"); break;
+				default: cells.add("TODO"); break;
 			}
-			printRow(row);
-		} catch (Exception ignored){}
+		}
+		printRow("", cells);
 	}
 
-	private void printRow(List<String> cells){
+	private void printRow(String color, List<String> cells) {
 		StringBuilder stringBuilder = new StringBuilder();
-
-		for (String c : cells){
+		for (String c : cells) {
 			stringBuilder.append(String.format("%-" + cellWidth + "s", truncate(c, cellWidth)));
 		}
-
-		// Move cursor to start of line and print row
-		System.out.print("\r");
-		System.out.println(stringBuilder.toString());
+		System.out.print("\r" + backgroundColor);
+		System.out.println(color + stringBuilder + backgroundColor);
 	}
 
+	private String truncate(String str) { return truncate(str, cellWidth); }
 
-	private String truncate(String str){
-		return truncate(str, cellWidth);
-	}
-
-	private String truncate(String str, int width){
+	private String truncate(String str, int width) {
+		if (str == null) return "";
 		if (str.length() > width - 1) return str.substring(0, width - 1);
 		return str;
 	}
 
 	/** Scroll up one row */
-	public void scrollUp(){
+	public void scrollUp() {
 		if (scrollIndex > 0) scrollIndex--;
 	}
 
 	/** Scroll down one row */
-	public void scrollDown(){
-		List<ProcessHandle> processes = getProcesses();
-		if (scrollIndex + pageSize < processes.size()) scrollIndex++;
+	public void scrollDown() {
+		if (scrollIndex + pageSize < cachedProcesses.size()) scrollIndex++;
+	}
+
+	public void changeSortByClick(int charPosition) {
+		int columnIndex = charPosition / cellWidth;
+		if (columnIndex >= 0 && columnIndex < infoTypes.size()) {
+			InfoType newSort = infoTypes.get(columnIndex);
+			if (sortBy == newSort) {
+				sortAsc = !sortAsc;
+			} else {
+				sortBy = newSort;
+				sortAsc = true;
+			}
+			refreshProcesses(); // resort cache immediately
+		}
 	}
 }

@@ -20,6 +20,9 @@ public class Main{
 		new ProcessBuilder("sh", "-c", "stty raw -echo </dev/tty").inheritIO().start().waitFor();
 		try{
 			showProcesses.draw();//initial draw
+			// enable mouse reporting
+			System.out.print("\u001B[?1002h");
+			System.out.flush();
 
 			AtomicBoolean refresh = new AtomicBoolean(true);
 
@@ -31,6 +34,7 @@ public class Main{
 						Thread.currentThread().interrupt();
 					}
 					if (refresh.get()){
+						showProcesses.refreshProcesses();
 						showProcesses.draw();
 					}
 				}
@@ -43,7 +47,8 @@ public class Main{
 				while ((c = System.in.read()) != -1){
 					switch (c){
 						case 27: // ESC sequence
-							if (System.in.read() == 91){ // '['
+							int next = System.in.read();
+							if (next == 91){ // '['
 								int arrow = System.in.read();
 								switch (arrow){
 									case 65: // Up
@@ -55,7 +60,18 @@ public class Main{
 								}
 								showProcesses.draw();
 								refresh.set(true);
-							}
+							} else if (next == 77) { // 'M' → mouse event
+    						    int cb = System.in.read() - 32;
+    						    int cx = System.in.read() - 32; // X (column, 1-based)
+    						    int cy = System.in.read() - 32; // Y (row, 1-based)
+
+    						    // Left click is cb == 0
+    						    if ((cb & 0b11) == 0 && cy == 1) { // header row (row 1)
+    						        showProcesses.changeSortByClick(cx - 1); // convert to 0-based column char index
+    						        showProcesses.draw();
+    						        refresh.set(true);
+    						    }
+    						}
 							break;
 						case 106: // 'j'
 							showProcesses.scrollDown();
@@ -88,6 +104,10 @@ public class Main{
 		} finally{
 			// restore normal terminal
 			new ProcessBuilder("sh", "-c", "stty sane </dev/tty").inheritIO().start().waitFor();
+			// disable mouse reporting
+			System.out.print("\u001B[?1000l");
+			System.out.flush();
+
 		}
 	}
 }
