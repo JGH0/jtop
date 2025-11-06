@@ -1,3 +1,4 @@
+import java.lang.ProcessHandle.Info;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,13 +8,12 @@ public class ShowProcesses{
 	}
 
 	private final List<InfoType> infoTypes; // preserves user order
-	private final int pageSize; // number of visible rows
+	private int pageSize; // number of visible rows
 	private int scrollIndex = 0; // top row index for scrolling
-	private static final int DEFAULT_CELL_WIDTH = 25; // default column width
-	private static final int SINGLE_COL_WIDTH = 10; // width if only 1 column
+	private int cellWidth; // column width
+	private String keyBindings = "\rUse j/k to scroll, Enter to scroll entire row, 'q' or Ctrl+C to quit";
 
-	public ShowProcesses(int pageSize, InfoType... infos){
-		this.pageSize = pageSize;
+	public ShowProcesses(InfoType... infos){
 		infoTypes = new ArrayList<>();
 		for (InfoType info : infos){
 			infoTypes.add(info);
@@ -29,8 +29,16 @@ public class ShowProcesses{
 
 	/** Draws only the visible window starting from scrollIndex */
 	public void draw(){
+		TerminalSize terminalSize = new TerminalSize();
+		// Set page size (-2 for header and footer)
+		int headerAndFooterRows = terminalSize.getRows() - (2 + ((keyBindings.length() + terminalSize.getColumns() - 1) / terminalSize.getColumns()));
+		this.pageSize = headerAndFooterRows;
+		// Set column width
+		this.cellWidth = terminalSize.getColumns() / infoTypes.size();
+
 		List<ProcessHandle> processes = getProcesses();
 		int total = processes.size();
+
 		int end = Math.min(scrollIndex + pageSize, total);
 
 		// Clear screen
@@ -48,9 +56,13 @@ public class ShowProcesses{
 		}
 
 		// Footer
-		TerminalSize terminalSize = new TerminalSize();
-		System.out.printf("\r-- Showing %d-%d of %d --\n", scrollIndex + 1, end, total);
-		System.out.println("\rUse j/k to scroll, Enter to scroll entire row, 'q' or Ctrl+C to quit");
+		String spaces = "";
+		for (int i = 0; i < (terminalSize.getColumns() - 25) / 2; i++){
+			spaces += " ";
+		}
+		String BG_RED = "\033[41m";
+		System.out.printf("\r" + spaces + BG_RED + "-- Showing %d-%d of %d --\n", scrollIndex + 1, end, total);
+		System.out.print(this.keyBindings);
 	}
 
 	private void printProcessRow(ProcessHandle processHandle){
@@ -77,10 +89,9 @@ public class ShowProcesses{
 
 	private void printRow(List<String> cells){
 		StringBuilder stringBuilder = new StringBuilder();
-		int width = (cells.size() == 1) ? SINGLE_COL_WIDTH : DEFAULT_CELL_WIDTH;
 
 		for (String c : cells){
-			stringBuilder.append(String.format("%-" + width + "s", truncate(c, width)));
+			stringBuilder.append(String.format("%-" + cellWidth + "s", truncate(c, cellWidth)));
 		}
 
 		// Move cursor to start of line and print row
@@ -90,8 +101,7 @@ public class ShowProcesses{
 
 
 	private String truncate(String str){
-		int width = (infoTypes.size() == 1) ? SINGLE_COL_WIDTH : DEFAULT_CELL_WIDTH;
-		return truncate(str, width);
+		return truncate(str, cellWidth);
 	}
 
 	private String truncate(String str, int width){
