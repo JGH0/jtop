@@ -50,7 +50,7 @@ jtop is a lightweight, terminal-based system monitoring tool written in Java. It
 3. Run the application:
 
    ```bash
-   java src/Main
+   java src/Main.java
    ```
 
 ### System-wide Installation
