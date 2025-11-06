@@ -17,6 +17,8 @@ public class ShowProcesses {
 
 	private String backgroundColor = "\033[40m" + "\033[37m";
 	private String headerColor = "\033[47m" + "\033[30m";
+	private String footerColor = "\033[41m" + "\033[37m";
+	private String sortingTriangleColor = "\033[31m";
 
 	public ShowProcesses(InfoType... infos) {
 		infoTypes = new ArrayList<>();
@@ -108,7 +110,15 @@ public class ShowProcesses {
 
 		// Print header
 		List<String> headers = new ArrayList<>();
-		for (InfoType type : infoTypes) headers.add(type.name());
+		for (InfoType type : infoTypes) {
+		    String name = type.name();
+		    if (type == sortBy) {
+		        // Add sorting arrow depending on sortAsc
+		        String triangle = sortAsc ? " ^" : " v";
+		        name += triangle; // todo: sortingTriangleColor + triangle + headerColor;
+		    }
+		    headers.add(name);
+		}
 		printRow(headerColor, headers);
 
 		// Print visible rows
@@ -118,8 +128,7 @@ public class ShowProcesses {
 
 		// Footer
 		String spaces = " ".repeat(Math.max(0, (terminalSize.getColumns() - 25) / 2));
-		String BG_RED = "\033[41m";
-		System.out.printf("\r" + spaces + BG_RED + "-- Showing %d-%d of %d --" + backgroundColor + "\n",
+		System.out.printf("\r" + spaces + footerColor + "-- Showing %d-%d of %d --" + backgroundColor + "\n",
 				scrollIndex + 1, end, total);
 		System.out.print(this.keyBindings);
 	}
@@ -152,7 +161,9 @@ public class ShowProcesses {
 		System.out.println(color + stringBuilder + backgroundColor);
 	}
 
-	private String truncate(String str) { return truncate(str, cellWidth); }
+	private String truncate(String str) {
+		return truncate(str, cellWidth);
+	}
 
 	private String truncate(String str, int width) {
 		if (str == null) return "";
