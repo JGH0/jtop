@@ -11,8 +11,8 @@ public class ShowProcesses {
 	private int pageSize;					// number of visible rows
 	private int scrollIndex = 0;			// top row index for scrolling
 	private int cellWidth;					// column width
-	private InfoType sortBy = InfoType.PID;	// default sort
-	private boolean sortAsc = true;			// ascending or descending
+	private InfoType sortBy = InfoType.CPU;	// default sort
+	private boolean sortAsc = false;			// ascending or descending
 	private String keyBindings = "\rUse j/k to scroll, Enter to scroll entire row, 'q' or Ctrl+C to quit";
 
 	private String tableColor = "\033[40m" + "\033[37m";
