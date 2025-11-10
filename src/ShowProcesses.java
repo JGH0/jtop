@@ -7,18 +7,19 @@ public class ShowProcesses {
 		PID, NAME, PATH, USER, CPU, MEMORY, DISK_READ, DISK_WRITE, NETWORK
 	}
 
-	private final List<InfoType> infoTypes; // preserves user order
-	private int pageSize;				   // number of visible rows
+	private final List<InfoType> infoTypes;	// preserves user order
+	private int pageSize;					// number of visible rows
 	private int scrollIndex = 0;			// top row index for scrolling
-	private int cellWidth;				  // column width
-	private InfoType sortBy = InfoType.PID; // default sort
-	private boolean sortAsc = true;		 // ascending or descending
+	private int cellWidth;					// column width
+	private InfoType sortBy = InfoType.PID;	// default sort
+	private boolean sortAsc = true;			// ascending or descending
 	private String keyBindings = "\rUse j/k to scroll, Enter to scroll entire row, 'q' or Ctrl+C to quit";
 
-	private String backgroundColor = "\033[40m" + "\033[37m";
+	private String tableColor = "\033[40m" + "\033[37m";
 	private String headerColor = "\033[47m" + "\033[30m";
 	private String footerColor = "\033[41m" + "\033[37m";
-	private String sortingTriangleColor = "\033[31m";
+	private String sortingArrowColor = "\033[31m";
+	private String clearStyling = "\033[0m";
 
 	public ShowProcesses(InfoType... infos) {
 		infoTypes = new ArrayList<>();
@@ -53,7 +54,7 @@ public class ShowProcesses {
 					case PATH: cmp = safeCompare(PathInfo.getPath(a.pid()), PathInfo.getPath(b.pid())); break;
 					case USER: cmp = safeCompare(a.info().user().orElse(""), b.info().user().orElse("")); break;
 					case CPU: cmp = Double.compare(CpuInfo.getCpuPercent(a.pid()), CpuInfo.getCpuPercent(b.pid())); break;
-					case MEMORY: cmp = Long.compare(MemoryInfo.getMemoryKb(a.pid()), MemoryInfo.getMemoryKb(b.pid())); break;
+					case MEMORY: cmp = Double.compare(MemoryInfo.getMemoryPercent(a.pid()), MemoryInfo.getMemoryPercent(b.pid())); break;
 					default: cmp = 0;
 				}
 			} catch (Exception e) {
@@ -73,7 +74,7 @@ public class ShowProcesses {
 			row.user = ph.info().user().orElse("Unknown");
 
 			try { row.cpu = String.valueOf(CpuInfo.getCpuPercent(ph.pid())); } catch (IOException e) { row.cpu = "?"; }
-			try { row.memory = String.valueOf(MemoryInfo.getMemoryKb(ph.pid())); } catch (IOException e) { row.memory = "?"; }
+			try { row.memory = String.valueOf(MemoryInfo.getMemoryPercent(ph.pid())); } catch (IOException e) { row.memory = "?"; }
 
 			rows.add(row);
 		}
@@ -112,12 +113,15 @@ public class ShowProcesses {
 		List<String> headers = new ArrayList<>();
 		for (InfoType type : infoTypes) {
 		    String name = type.name();
+			if (type == InfoType.CPU || type == InfoType.MEMORY) {
+				name += " %";
+			}
 		    if (type == sortBy) {
 		        // Add sorting arrow depending on sortAsc
-		        String triangle = sortAsc ? " ^" : " v";
-		        name += triangle; // todo: sortingTriangleColor + triangle + headerColor;
+		        String sortingArrow = sortAsc ? " ^" : " v";
+		        name += sortingArrow; // todo: sortingArrowColor + triangle + headerColor;
 		    }
-		    headers.add(name);
+			headers.add(name);
 		}
 		printRow(headerColor, headers);
 
@@ -128,7 +132,7 @@ public class ShowProcesses {
 
 		// Footer
 		String spaces = " ".repeat(Math.max(0, (terminalSize.getColumns() - 25) / 2));
-		System.out.printf("\r" + spaces + footerColor + "-- Showing %d-%d of %d --" + backgroundColor + "\n",
+		System.out.printf("\r" + spaces + footerColor + "-- Showing %d-%d of %d --" + clearStyling + "\n",
 				scrollIndex + 1, end, total);
 		System.out.print(this.keyBindings);
 	}
@@ -157,8 +161,8 @@ public class ShowProcesses {
 		for (String c : cells) {
 			stringBuilder.append(String.format("%-" + cellWidth + "s", truncate(c, cellWidth)));
 		}
-		System.out.print("\r" + backgroundColor);
-		System.out.println(color + stringBuilder + backgroundColor);
+		System.out.print("\r" + tableColor);
+		System.out.println(color + stringBuilder + clearStyling);
 	}
 
 	private String truncate(String str) {

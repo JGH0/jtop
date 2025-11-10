@@ -3,6 +3,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class CpuInfo{
+	private final static int DECIMALS = 3;
 	private static long getSystemUptimeSeconds() throws IOException{
 		String uptimeStr = Files.readString(Paths.get("/proc/uptime"));
 		return (long) Double.parseDouble(uptimeStr.split("\\s+")[0]);
@@ -17,6 +18,10 @@ public class CpuInfo{
 
 		long uptime = getSystemUptimeSeconds();
 
-		return (100d * totalTime / uptime) / Runtime.getRuntime().availableProcessors();
+		double percent = (100d * totalTime / uptime) / Runtime.getRuntime().availableProcessors();
+
+		// Round to specified decimal places
+		double factor = Math.pow(10, DECIMALS);
+		return Math.round(percent * factor) / factor;
 	}
 }
