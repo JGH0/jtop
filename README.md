@@ -101,7 +101,7 @@ jtop provides a simple and intuitive interface for system monitoring. Use the fo
 * `Enter`: Scroll entire row
 * `q` or `Ctrl+C`: Quit
 
-## Contributing (starting 24.10 since this is a graded school project)
+## Contributing
 
 We welcome contributions from the community! To contribute:
 
