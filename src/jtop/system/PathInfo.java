@@ -1,5 +1,7 @@
 package jtop.system;
+
 import java.util.Optional;
+import jtop.Isystem.IPathInfo;
 
 /**
  * Provides utilities to retrieve process path information.
@@ -8,7 +10,7 @@ import java.util.Optional;
  * including its command (full path) and executable name.
  * </p>
  */
-public class PathInfo {
+public class PathInfo implements IPathInfo {
 
 	/**
 	 * Returns the name of the executable for the given process ID.
@@ -19,7 +21,8 @@ public class PathInfo {
 	 * @param pid the process ID
 	 * @return the executable name, or "Unknown" if the process does not exist
 	 */
-	public static String getName(long pid) {
+	@Override
+	public String getName(long pid) {
 		Optional<ProcessHandle> ph = ProcessHandle.of(pid);
 		if (ph.isPresent()) {
 			ProcessHandle.Info info = ph.get().info();
@@ -38,7 +41,8 @@ public class PathInfo {
 	 * @param pid the process ID
 	 * @return the full command path, or "Unknown" if the process does not exist
 	 */
-	public static String getPath(long pid) {
+	@Override
+	public String getPath(long pid) {
 		Optional<ProcessHandle> ph = ProcessHandle.of(pid);
 		if (ph.isPresent()) {
 			ProcessHandle.Info info = ph.get().info();

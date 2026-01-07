@@ -1,6 +1,10 @@
 package jtop.terminal;
 import java.util.Map;
 
+import jtop.Isystem.ICpuInfo;
+import jtop.Isystem.IMemoryInfo;
+import jtop.Isystem.ITemperatureInfo;
+import jtop.Isystem.IUptime;
 import jtop.system.CpuInfo;
 import jtop.system.MemoryInfo;
 import jtop.system.TemperatureInfo;
@@ -43,15 +47,21 @@ public class Header {
 	 * </p>
 	 */
 	public static void draw() {
+		// create interface instances
+		IUptime uptimeInfo = new Uptime();
+		ICpuInfo cpuInfo = new CpuInfo();
+		IMemoryInfo memoryInfo = new MemoryInfo();
+		ITemperatureInfo tempInfo = new TemperatureInfo();
+
 		try {
-			double uptime = Uptime.getSystemUptime('h'); // hours
-			String load = CpuInfo.getLoadAverage();
-			double cpuUsage = CpuInfo.getCpuUsage(100); // short sample
-			double memPercent = MemoryInfo.getMemoryUsage();
-			double totalMem = MemoryInfo.getTotalMemoryBytes();
+			double uptime = uptimeInfo.getSystemUptime('h'); // hours
+			String load = cpuInfo.getLoadAverage();
+			double cpuUsage = cpuInfo.getCpuUsage(100); // short sample
+			double memPercent = memoryInfo.getMemoryUsage();
+			double totalMem = memoryInfo.getTotalMemoryBytes();
 			double usedMem = totalMem * (memPercent / 100.0);
 
-			Map<String, Double> temps = TemperatureInfo.getTemperatures();
+			Map<String, Double> temps = tempInfo.getTemperatures();
 
 			StringBuilder sb = new StringBuilder();
 			sb.append(HEADER_BG).append(HEADER_FG);

@@ -2,13 +2,15 @@ package jtop.system;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import jtop.Isystem.IUptime;
+
 /**
  * Utility class for retrieving system uptime information.
  * <p>
  * Reads the uptime from <code>/proc/uptime</code> and returns it
  * in various units such as seconds, minutes, hours, or days.
  */
-public class Uptime {
+public class Uptime implements IUptime{
 
 	/**
 	 * Gets the system uptime in the specified format.
@@ -22,7 +24,7 @@ public class Uptime {
 	 * @throws Exception if reading <code>/proc/uptime</code> fails
 	 *				   or if the timeFormat is invalid.
 	 */
-	public static double getSystemUptime(char timeFormat) throws Exception {
+	public double getSystemUptime(char timeFormat) throws Exception {
 		String content = Files.readString(Path.of("/proc/uptime"));
 		double seconds = Double.parseDouble(content.split(" ")[0]);
 

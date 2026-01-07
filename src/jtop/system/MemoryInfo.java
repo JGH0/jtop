@@ -1,10 +1,12 @@
 package jtop.system;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import jtop.Isystem.IMemoryInfo;
 
 /**
  * Provides methods to gather memory usage statistics.
@@ -17,7 +19,7 @@ import java.util.Map;
  *	 <li>Memory usage percentage of a specific process (by PID)</li>
  * </ul>
  */
-public class MemoryInfo {
+public class MemoryInfo implements IMemoryInfo {
 
 	/** Typical memory page size on Linux in bytes. */
 	private static final long PAGE_SIZE = 4096;
@@ -29,7 +31,8 @@ public class MemoryInfo {
 	 * @return memory usage percentage of the process
 	 * @throws IOException if the /proc file cannot be read or is malformed
 	 */
-	public static double getMemoryPercent(long pid) throws IOException {
+	@Override
+	public double getMemoryPercent(long pid) throws IOException {
 		Path statmPath = Path.of("/proc", String.valueOf(pid), "statm");
 		if (!Files.exists(statmPath)) {
 			throw new IOException("Process with PID " + pid + " does not exist");
@@ -56,7 +59,8 @@ public class MemoryInfo {
 	 * @return memory usage percentage of the system
 	 * @throws IOException if /proc/meminfo cannot be read
 	 */
-	public static double getMemoryUsage() throws IOException {
+	@Override
+	public double getMemoryUsage() throws IOException {
 		Map<String, Long> mem = readMemInfo();
 
 		long total = mem.getOrDefault("MemTotal", 1L);
@@ -76,7 +80,8 @@ public class MemoryInfo {
 	 * @return total memory in bytes
 	 * @throws IOException if /proc/meminfo cannot be read
 	 */
-	public static long getTotalMemoryBytes() throws IOException {
+	@Override
+	public long getTotalMemoryBytes() throws IOException {
 		for (String line : Files.readAllLines(Path.of("/proc/meminfo"))) {
 			if (line.startsWith("MemTotal:")) {
 				return Long.parseLong(line.replaceAll("\\D+", "")) * 1024;
@@ -91,7 +96,8 @@ public class MemoryInfo {
 	 * @return used memory in bytes
 	 * @throws IOException if /proc/meminfo cannot be read
 	 */
-	public static long getAvailableMemoryBytes() throws IOException {
+	@Override
+	public long getAvailableMemoryBytes() throws IOException {
 		long total = 0, available = 0;
 		for (String line : Files.readAllLines(Path.of("/proc/meminfo"))) {
 			if (line.startsWith("MemTotal:"))
@@ -132,9 +138,9 @@ public class MemoryInfo {
 		throw new IOException("Cannot read total memory from /proc/meminfo");
 	}
 
-	/** Helper: Rounds a double value to the given number of decimal places. 
+	/** Helper: Rounds a double value to the given number of decimal places.
 	 * @return returns the value to the desired lenght
-	*/
+	 */
 	private static double round(double val, int decimals) {
 		double factor = Math.pow(10, decimals);
 		return Math.round(val * factor) / factor;

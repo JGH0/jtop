@@ -2,6 +2,9 @@ package jtop.core;
 import java.io.IOException;
 import java.util.Comparator;
 
+import jtop.Isystem.ICpuInfo;
+import jtop.Isystem.IMemoryInfo;
+import jtop.Isystem.IPathInfo;
 import jtop.system.CpuInfo;
 import jtop.system.MemoryInfo;
 import jtop.system.PathInfo;
@@ -24,16 +27,21 @@ public class ProcessSorter {
 	 * @return a {@link Comparator} for {@link ProcessHandle}
 	 */
 	public static Comparator<ProcessHandle> getComparator(InfoType sortBy, boolean ascending) {
+		// create instances of your interface implementations
+		IPathInfo pathInfo = new PathInfo();
+		ICpuInfo cpuInfo = new CpuInfo();
+		IMemoryInfo memoryInfo = new MemoryInfo();
+
 		return (a, b) -> {
 			int cmp = 0;
 			try {
 				switch (sortBy) {
 					case PID -> cmp = Long.compare(a.pid(), b.pid());
-					case NAME -> cmp = safeCompare(PathInfo.getName(a.pid()), PathInfo.getName(b.pid()));
-					case PATH -> cmp = safeCompare(PathInfo.getPath(a.pid()), PathInfo.getPath(b.pid()));
+					case NAME -> cmp = safeCompare(pathInfo.getName(a.pid()), pathInfo.getName(b.pid()));
+					case PATH -> cmp = safeCompare(pathInfo.getPath(a.pid()), pathInfo.getPath(b.pid()));
 					case USER -> cmp = safeCompare(a.info().user().orElse(""), b.info().user().orElse(""));
-					case CPU -> cmp = Double.compare(CpuInfo.getCpuPercent(a.pid()), CpuInfo.getCpuPercent(b.pid()));
-					case MEMORY -> cmp = Double.compare(MemoryInfo.getMemoryPercent(a.pid()), MemoryInfo.getMemoryPercent(b.pid()));
+					case CPU -> cmp = Double.compare(cpuInfo.getCpuPercent(a.pid()), cpuInfo.getCpuPercent(b.pid()));
+					case MEMORY -> cmp = Double.compare(memoryInfo.getMemoryPercent(a.pid()), memoryInfo.getMemoryPercent(b.pid()));
 					default -> cmp = 0;
 				}
 			} catch (Exception ignored) { }

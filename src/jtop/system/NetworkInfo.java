@@ -1,10 +1,13 @@
 package jtop.system;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import jtop.Isystem.INetworkInfo;
 
 /**
  * Provides methods to collect network usage statistics.
@@ -13,7 +16,7 @@ import java.util.Map;
  * the number of bytes received (RX) and transmitted (TX) per network interface.
  * </p>
  */
-public class NetworkInfo {
+public class NetworkInfo implements INetworkInfo {
 
 	/**
 	 * Retrieves the current network usage for all network interfaces.
@@ -26,8 +29,10 @@ public class NetworkInfo {
 	 *		 </ul>
 	 * @throws IOException if /proc/net/dev cannot be read
 	 */
-	public static Map<String, long[]> getNetworkUsage() throws IOException {
+	@Override
+	public Map<String, long[]> getNetworkUsage() throws IOException {
 		Map<String, long[]> map = new LinkedHashMap<>();
+
 		try (BufferedReader br = Files.newBufferedReader(Path.of("/proc/net/dev"))) {
 			// Skip header lines
 			br.lines().skip(2).forEach(line -> {
@@ -42,6 +47,7 @@ public class NetworkInfo {
 				map.put(iface, new long[]{rx, tx});
 			});
 		}
+
 		return map;
 	}
 }

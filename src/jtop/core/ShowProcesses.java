@@ -3,6 +3,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import jtop.Isystem.ICpuInfo;
+import jtop.Isystem.IMemoryInfo;
+import jtop.Isystem.IPathInfo;
 import jtop.config.Config;
 import jtop.system.CpuInfo;
 import jtop.system.MemoryInfo;
@@ -57,15 +60,20 @@ public class ShowProcesses implements IRefreshable {
 		processes.sort(ProcessSorter.getComparator(sortBy, sortAsc));
 
 		List<ProcessRow> rows = new ArrayList<>();
+
+		IPathInfo pathInfo = new PathInfo();       // instance for PathInfo
+		ICpuInfo cpuInfo = new CpuInfo();          // instance for CpuInfo
+		IMemoryInfo memoryInfo = new MemoryInfo();// instance for MemoryInfo
+
 		for (ProcessHandle ph : processes) {
 			try {
 				rows.add(new ProcessRow(
 					ph.pid(),
-					safe(PathInfo.getName(ph.pid())),
-					safe(PathInfo.getPath(ph.pid())),
+					safe(pathInfo.getName(ph.pid())),
+					safe(pathInfo.getPath(ph.pid())),
 					ph.info().user().orElse("Unknown"),
-					String.valueOf(CpuInfo.getCpuPercent(ph.pid())),
-					String.valueOf(MemoryInfo.getMemoryPercent(ph.pid()))
+					String.valueOf(cpuInfo.getCpuPercent(ph.pid())),
+					String.valueOf(memoryInfo.getMemoryPercent(ph.pid()))
 				));
 			} catch (IOException e) {
 				// ignore processes we cannot read

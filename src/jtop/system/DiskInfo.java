@@ -1,10 +1,13 @@
 package jtop.system;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import jtop.Isystem.IDiskInfo;
 
 /**
  * Provides information about disk usage and I/O statistics for mounted devices.
@@ -15,7 +18,7 @@ import java.util.Map;
  * with filesystem information.
  * </p>
  */
-public class DiskInfo {
+public class DiskInfo implements IDiskInfo {
 
     /**
      * Retrieves disk I/O statistics for all block devices.
@@ -32,7 +35,8 @@ public class DiskInfo {
      *         long array containing [reads, writes]
      * @throws IOException if reading <code>/proc/diskstats</code> fails
      */
-    static Map<String, long[]> getDiskStats() throws IOException {
+    @Override
+    public Map<String, long[]> getDiskStats() throws IOException {
         Map<String, long[]> map = new LinkedHashMap<>();
         try (BufferedReader br = Files.newBufferedReader(Path.of("/proc/diskstats"))) {
             String line;
