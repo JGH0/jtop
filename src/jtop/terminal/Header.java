@@ -1,14 +1,14 @@
 package jtop.terminal;
+
 import java.util.Map;
+import java.util.Optional;
 
 import jtop.Isystem.ICpuInfo;
 import jtop.Isystem.IMemoryInfo;
 import jtop.Isystem.ITemperatureInfo;
 import jtop.Isystem.IUptime;
-import jtop.system.CpuInfo;
-import jtop.system.MemoryInfo;
-import jtop.system.TemperatureInfo;
-import jtop.system.Uptime;
+import jtop.system.SystemInfoFactory;
+import jtop.system.Feature;
 
 /**
  * Handles rendering of the terminal interface header.
@@ -47,21 +47,31 @@ public class Header {
 	 * </p>
 	 */
 	public static void draw() {
-		// create interface instances
-		IUptime uptimeInfo = new Uptime();
-		ICpuInfo cpuInfo = new CpuInfo();
-		IMemoryInfo memoryInfo = new MemoryInfo();
-		ITemperatureInfo tempInfo = new TemperatureInfo();
 
 		try {
+			// Use the factory to get OS-specific implementations
+			Optional<IUptime> uptimeOpt = SystemInfoFactory.getFeature(Feature.UPTIME);
+			Optional<ICpuInfo> cpuOpt = SystemInfoFactory.getFeature(Feature.CPU);
+			Optional<IMemoryInfo> memoryOpt = SystemInfoFactory.getFeature(Feature.MEMORY);
+			Optional<ITemperatureInfo> tempOpt = SystemInfoFactory.getFeature(Feature.TEMPERATURE);
+
+			// If any core feature is missing, print a fallback message
+			if (uptimeOpt.isEmpty() || cpuOpt.isEmpty() || memoryOpt.isEmpty()) {
+				System.out.println(HEADER_BG + HEADER_FG + " Header error: Core system info unavailable" + RESET);
+				return;
+			}
+
+			IUptime uptimeInfo = uptimeOpt.get();
+			ICpuInfo cpuInfo = cpuOpt.get();
+			IMemoryInfo memoryInfo = memoryOpt.get();
+			ITemperatureInfo tempInfo = tempOpt.orElse(null); // temperature optional
+
 			double uptime = uptimeInfo.getSystemUptime('h'); // hours
 			String load = cpuInfo.getLoadAverage();
 			double cpuUsage = cpuInfo.getCpuUsage(100); // short sample
 			double memPercent = memoryInfo.getMemoryUsage();
 			double totalMem = memoryInfo.getTotalMemoryBytes();
 			double usedMem = totalMem * (memPercent / 100.0);
-
-			Map<String, Double> temps = tempInfo.getTemperatures();
 
 			StringBuilder sb = new StringBuilder();
 			sb.append(HEADER_BG).append(HEADER_FG);
@@ -71,10 +81,14 @@ public class Header {
 			sb.append(String.format("| Mem: %.1f%% (%.1f/%.1f GB) ",
 					memPercent, usedMem / 1e9, totalMem / 1e9));
 
-			int count = 0;
-			for (Map.Entry<String, Double> entry : temps.entrySet()) {
-				sb.append(String.format("| %s: %.1f°C ", entry.getKey(), entry.getValue()));
-				if (++count >= 3) break; // avoid overflowing
+			// Add temperatures only if the feature exists
+			if (tempInfo != null) {
+				Map<String, Double> temps = tempInfo.getTemperatures();
+				int count = 0;
+				for (Map.Entry<String, Double> entry : temps.entrySet()) {
+					sb.append(String.format("| %s: %.1f°C ", entry.getKey(), entry.getValue()));
+					if (++count >= 3) break; // avoid overflowing
+				}
 			}
 
 			// truncate to terminal width
@@ -84,8 +98,7 @@ public class Header {
 				line = line.substring(0, terminalWidth - 1);
 			}
 
-			sb = new StringBuilder(line).append(RESET);
-			System.out.println(sb);
+			System.out.println(new StringBuilder(line).append(RESET));
 
 		} catch (Exception e) {
 			System.out.println(HEADER_BG + HEADER_FG + " Header error: " + e.getMessage() + RESET);
@@ -99,6 +112,6 @@ public class Header {
 	 * @return number of rows occupied by the header
 	 */
 	public static int getRowsCount() {
-		return 1;//in future there may be multi line header
+		return 1; // in future there may be multi-line header
 	}
 }

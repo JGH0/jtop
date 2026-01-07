@@ -1,13 +1,13 @@
 package jtop.core;
-import java.io.IOException;
+
 import java.util.Comparator;
+import java.util.Optional;
 
 import jtop.Isystem.ICpuInfo;
 import jtop.Isystem.IMemoryInfo;
 import jtop.Isystem.IPathInfo;
-import jtop.system.CpuInfo;
-import jtop.system.MemoryInfo;
-import jtop.system.PathInfo;
+import jtop.system.Feature;
+import jtop.system.SystemInfoFactory;
 
 /**
  * Provides sorting utilities for processes.
@@ -27,21 +27,37 @@ public class ProcessSorter {
 	 * @return a {@link Comparator} for {@link ProcessHandle}
 	 */
 	public static Comparator<ProcessHandle> getComparator(InfoType sortBy, boolean ascending) {
-		// create instances of your interface implementations
-		IPathInfo pathInfo = new PathInfo();
-		ICpuInfo cpuInfo = new CpuInfo();
-		IMemoryInfo memoryInfo = new MemoryInfo();
+		// create interface instances from factory
+		Optional<IPathInfo> pathOpt = SystemInfoFactory.getFeature(Feature.PROCESS);
+		Optional<ICpuInfo> cpuOpt = SystemInfoFactory.getFeature(Feature.CPU);
+		Optional<IMemoryInfo> memOpt = SystemInfoFactory.getFeature(Feature.MEMORY);
 
 		return (a, b) -> {
 			int cmp = 0;
 			try {
 				switch (sortBy) {
 					case PID -> cmp = Long.compare(a.pid(), b.pid());
-					case NAME -> cmp = safeCompare(pathInfo.getName(a.pid()), pathInfo.getName(b.pid()));
-					case PATH -> cmp = safeCompare(pathInfo.getPath(a.pid()), pathInfo.getPath(b.pid()));
-					case USER -> cmp = safeCompare(a.info().user().orElse(""), b.info().user().orElse(""));
-					case CPU -> cmp = Double.compare(cpuInfo.getCpuPercent(a.pid()), cpuInfo.getCpuPercent(b.pid()));
-					case MEMORY -> cmp = Double.compare(memoryInfo.getMemoryPercent(a.pid()), memoryInfo.getMemoryPercent(b.pid()));
+					case NAME -> cmp = safeCompare(
+							pathOpt.map(p -> p.getName(a.pid())).orElse(""),
+							pathOpt.map(p -> p.getName(b.pid())).orElse("")
+					);
+					case PATH -> cmp = safeCompare(
+							pathOpt.map(p -> p.getPath(a.pid())).orElse(""),
+							pathOpt.map(p -> p.getPath(b.pid())).orElse("")
+					);
+					case USER -> cmp = safeCompare(
+							a.info().user().orElse(""),
+							b.info().user().orElse("")
+					);
+					case CPU -> cmp = Double.compare(
+						cpuOpt.map(c -> safeCpu(c, a.pid())).orElse(0.0),
+						cpuOpt.map(c -> safeCpu(c, b.pid())).orElse(0.0)
+					);
+					case MEMORY -> cmp = Double.compare(
+						memOpt.map(m -> safeMemory(m, a.pid())).orElse(0.0),
+						memOpt.map(m -> safeMemory(m, b.pid())).orElse(0.0)
+					);
+
 					default -> cmp = 0;
 				}
 			} catch (Exception ignored) { }
@@ -60,5 +76,21 @@ public class ProcessSorter {
 		if (a == null) a = "";
 		if (b == null) b = "";
 		return a.compareToIgnoreCase(b);
+	}
+
+	private static double safeMemory(IMemoryInfo mem, long pid) {
+		try {
+			return mem.getMemoryPercent(pid);
+		} catch (Exception e) {
+			return 0.0;
+		}
+	}
+
+	private static double safeCpu(ICpuInfo cpu, long pid) {
+		try {
+			return cpu.getCpuPercent(pid);
+		} catch (Exception e) {
+			return 0.0;
+		}
 	}
 }

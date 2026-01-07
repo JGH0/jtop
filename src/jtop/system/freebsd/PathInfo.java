@@ -1,4 +1,4 @@
-package jtop.system;
+package jtop.system.freebsd;
 
 import java.util.Optional;
 import jtop.Isystem.IPathInfo;

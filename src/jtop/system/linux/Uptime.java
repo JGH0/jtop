@@ -1,4 +1,4 @@
-package jtop.system;
+package jtop.system.linux;
 import java.nio.file.Files;
 import java.nio.file.Path;
 

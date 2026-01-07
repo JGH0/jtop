@@ -1,5 +1,4 @@
 package jtop;
-import java.io.IOException;
 
 /**
  * Entry point for the jtop system monitoring application.

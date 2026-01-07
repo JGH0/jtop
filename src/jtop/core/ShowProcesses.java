@@ -1,5 +1,5 @@
 package jtop.core;
-import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,10 +7,9 @@ import jtop.Isystem.ICpuInfo;
 import jtop.Isystem.IMemoryInfo;
 import jtop.Isystem.IPathInfo;
 import jtop.config.Config;
-import jtop.system.CpuInfo;
-import jtop.system.MemoryInfo;
-import jtop.system.PathInfo;
 import jtop.terminal.TerminalSize;
+import jtop.system.Feature;
+import jtop.system.SystemInfoFactory;
 
 /**
  * Core class responsible for managing, sorting, and displaying running processes.
@@ -61,24 +60,34 @@ public class ShowProcesses implements IRefreshable {
 
 		List<ProcessRow> rows = new ArrayList<>();
 
-		IPathInfo pathInfo = new PathInfo();       // instance for PathInfo
-		ICpuInfo cpuInfo = new CpuInfo();          // instance for CpuInfo
-		IMemoryInfo memoryInfo = new MemoryInfo();// instance for MemoryInfo
+		// dynamically get feature implementations
+		ICpuInfo cpuInfo = SystemInfoFactory.getFeature(Feature.CPU)
+			.map(f -> (ICpuInfo) f)
+			.orElse(null);
+
+		IMemoryInfo memoryInfo = SystemInfoFactory.getFeature(Feature.MEMORY)
+			.map(f -> (IMemoryInfo) f)
+			.orElse(null);
+
+		IPathInfo pathInfo = SystemInfoFactory.getFeature(Feature.PROCESS)
+			.map(f -> (IPathInfo) f)
+			.orElse(null);
 
 		for (ProcessHandle ph : processes) {
 			try {
-				rows.add(new ProcessRow(
-					ph.pid(),
-					safe(pathInfo.getName(ph.pid())),
-					safe(pathInfo.getPath(ph.pid())),
-					ph.info().user().orElse("Unknown"),
-					String.valueOf(cpuInfo.getCpuPercent(ph.pid())),
-					String.valueOf(memoryInfo.getMemoryPercent(ph.pid()))
-				));
-			} catch (IOException e) {
+				long pid = ph.pid();
+				String name = pathInfo != null ? safe(pathInfo.getName(pid)) : "?";
+				String path = pathInfo != null ? safe(pathInfo.getPath(pid)) : "?";
+				String user = ph.info().user().orElse("Unknown");
+				String cpuPercent = cpuInfo != null ? String.valueOf(safeCpu(cpuInfo, pid)) : "?";
+				String memPercent = memoryInfo != null ? String.valueOf(safeMemory(memoryInfo, pid)) : "?";
+
+				rows.add(new ProcessRow(pid, name, path, user, cpuPercent, memPercent));
+			} catch (Exception e) {
 				// ignore processes we cannot read
 			}
 		}
+
 		cachedProcesses = rows;
 	}
 
@@ -94,9 +103,9 @@ public class ShowProcesses implements IRefreshable {
 		this.pageSize = terminalSize.getRows() - ProcessTableRenderer.getHeaderAndFooterLength();
 		this.cellWidth = terminalSize.getColumns() / infoTypes.size();
 
-		if (cachedProcesses.isEmpty()){
+		if (cachedProcesses.isEmpty()) {
 			refreshProcesses();
-		};
+		}
 
 		new ProcessTableRenderer(config, cellWidth, pageSize)
 			.draw(cachedProcesses, infoTypes, sortBy, sortAsc, scrollIndex);
@@ -152,6 +161,28 @@ public class ShowProcesses implements IRefreshable {
 	 */
 	private String safe(String s) {
 		return s != null ? s : "?";
+	}
+
+	/**
+	 * Safely retrieves CPU usage, returns 0.0 if unavailable.
+	 */
+	private static double safeCpu(ICpuInfo cpu, long pid) {
+		try {
+			return cpu.getCpuPercent(pid);
+		} catch (Exception e) {
+			return 0.0;
+		}
+	}
+
+	/**
+	 * Safely retrieves memory usage, returns 0.0 if unavailable.
+	 */
+	private static double safeMemory(IMemoryInfo mem, long pid) {
+		try {
+			return mem.getMemoryPercent(pid);
+		} catch (Exception e) {
+			return 0.0;
+		}
 	}
 
 	/**

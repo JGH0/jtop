@@ -1,4 +1,4 @@
-package jtop.system;
+package jtop.system.linux;
 
 import java.io.BufferedReader;
 import java.io.IOException;
