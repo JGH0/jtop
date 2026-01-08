@@ -1,76 +1,21 @@
 package jtop.terminal;
 
 import java.util.Map;
-import java.util.Optional;
 
-import jtop.Isystem.ICpuInfo;
-import jtop.Isystem.IMemoryInfo;
-import jtop.Isystem.ITemperatureInfo;
-import jtop.Isystem.IUptime;
-import jtop.system.SystemInfoFactory;
-import jtop.system.Feature;
+import jtop.system.linux.SystemSampler;
 
-/**
- * Handles rendering of the terminal interface header.
- * <p>
- * Displays key system information such as uptime, CPU usage, memory usage,
- * load average, and temperatures of available sensors.
- * The header is displayed on a single line with ANSI color formatting.
- * </p>
- */
 public class Header {
 
-	/** ANSI reset code to restore default terminal formatting. */
 	private static final String RESET = "\033[0m";
-
-	/** ANSI escape code for header background color (blue). */
 	private static final String HEADER_BG = "\033[44m";
-
-	/** ANSI escape code for header foreground color (bright white). */
 	private static final String HEADER_FG = "\033[97m";
 
-	/**
-	 * Draws the header line on the terminal.
-	 * <p>
-	 * Displays:
-	 * </p>
-	 * <ul>
-	 *	 <li>System uptime in hours</li>
-	 *	 <li>Load average from /proc/loadavg</li>
-	 *	 <li>CPU usage percentage</li>
-	 *	 <li>Memory usage percentage and absolute values (GB)</li>
-	 *	 <li>Temperatures of available sensors (up to 3 to avoid overflow)</li>
-	 * </ul>
-	 * <p>
-	 * Automatically truncates the header to the terminal width.
-	 * Any errors during data retrieval are caught and displayed as a message.
-	 * </p>
-	 */
-	public static void draw() {
-
+	// draw header using cached SystemSampler values
+	public static void draw(SystemSampler sampler, double uptime, String load) {
 		try {
-			// Use the factory to get OS-specific implementations
-			Optional<IUptime> uptimeOpt = SystemInfoFactory.getFeature(Feature.UPTIME);
-			Optional<ICpuInfo> cpuOpt = SystemInfoFactory.getFeature(Feature.CPU);
-			Optional<IMemoryInfo> memoryOpt = SystemInfoFactory.getFeature(Feature.MEMORY);
-			Optional<ITemperatureInfo> tempOpt = SystemInfoFactory.getFeature(Feature.TEMPERATURE);
-
-			// If any core feature is missing, print a fallback message
-			if (uptimeOpt.isEmpty() || cpuOpt.isEmpty() || memoryOpt.isEmpty()) {
-				System.out.println(HEADER_BG + HEADER_FG + " Header error: Core system info unavailable" + RESET);
-				return;
-			}
-
-			IUptime uptimeInfo = uptimeOpt.get();
-			ICpuInfo cpuInfo = cpuOpt.get();
-			IMemoryInfo memoryInfo = memoryOpt.get();
-			ITemperatureInfo tempInfo = tempOpt.orElse(null); // temperature optional
-
-			double uptime = uptimeInfo.getSystemUptime('h'); // hours
-			String load = cpuInfo.getLoadAverage();
-			double cpuUsage = cpuInfo.getCpuUsage(100); // short sample
-			double memPercent = memoryInfo.getMemoryUsage();
-			double totalMem = memoryInfo.getTotalMemoryBytes();
+			double cpuUsage = sampler.getCpu();
+			double memPercent = sampler.getMem();
+			double totalMem = sampler.getTotalMemoryBytes(); // you can cache this too
 			double usedMem = totalMem * (memPercent / 100.0);
 
 			StringBuilder sb = new StringBuilder();
@@ -81,37 +26,25 @@ public class Header {
 			sb.append(String.format("| Mem: %.1f%% (%.1f/%.1f GB) ",
 					memPercent, usedMem / 1e9, totalMem / 1e9));
 
-			// Add temperatures only if the feature exists
-			if (tempInfo != null) {
-				Map<String, Double> temps = tempInfo.getTemperatures();
+			Map<String, Double> temps = sampler.getTemps();
+			if (temps != null) {
 				int count = 0;
 				for (Map.Entry<String, Double> entry : temps.entrySet()) {
 					sb.append(String.format("| %s: %.1f°C ", entry.getKey(), entry.getValue()));
-					if (++count >= 3) break; // avoid overflowing
+					if (++count >= 3) break;
 				}
 			}
 
-			// truncate to terminal width
 			int terminalWidth = TerminalSize.getColumns();
-			String line = sb.toString();
-			if (line.length() > terminalWidth) {
-				line = line.substring(0, terminalWidth - 1);
-			}
-
-			System.out.println(new StringBuilder(line).append(RESET));
+			String line = sb.length() > terminalWidth ? sb.substring(0, terminalWidth - 1) : sb.toString();
+			System.out.println(line + RESET);
 
 		} catch (Exception e) {
 			System.out.println(HEADER_BG + HEADER_FG + " Header error: " + e.getMessage() + RESET);
 		}
 	}
 
-	/**
-	 * Returns the number of terminal rows occupied by the header.
-	 * Currently returns 1, but this may change if the header is split into multiple lines.
-	 *
-	 * @return number of rows occupied by the header
-	 */
 	public static int getRowsCount() {
-		return 1; // in future there may be multi-line header
+		return 1;
 	}
 }

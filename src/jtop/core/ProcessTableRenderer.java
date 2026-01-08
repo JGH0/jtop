@@ -1,10 +1,12 @@
 package jtop.core;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import jtop.config.Config;
 import jtop.terminal.Header;
 import jtop.terminal.TerminalSize;
+import jtop.system.linux.SystemSampler;
 
 /**
  * Responsible for rendering the process table in the terminal.
@@ -27,6 +29,7 @@ public class ProcessTableRenderer {
 
 	private final int cellWidth;
 	private final int pageSize;
+	private final SystemSampler sampler;
 
 	/**
 	 * Initializes the table renderer with configuration and layout settings.
@@ -34,16 +37,19 @@ public class ProcessTableRenderer {
 	 * @param config configuration object containing color settings and footer text
 	 * @param cellWidth width of each column in characters
 	 * @param pageSize number of rows visible at a time
+	 * @param sampler cached system information (CPU, memory, temps)
 	 */
-	public ProcessTableRenderer(Config config, int cellWidth, int pageSize) {
+	public ProcessTableRenderer(Config config, int cellWidth, int pageSize, SystemSampler sampler) {
 		this.tableColor = config.getString("table.color", "\033[40m\033[37m");
 		this.headerColor = config.getString("header.color", "\033[47m\033[30m");
 		this.footerColor = config.getString("footer.color", "\033[41m\033[37m");
 		this.clearStyling = "\033[0m";
 		this.sortingArrowColor = "\033[31m";
-		this.keyBindings = config.getString("footer.text.keybindings", "Use j/k to scroll, Enter to scroll entire row, 'q' or Ctrl+C to quit");
+		this.keyBindings = config.getString("footer.text.keybindings",
+				"Use j/k to scroll, Enter to scroll entire row, 'q' or Ctrl+C to quit");
 		this.cellWidth = cellWidth;
 		this.pageSize = pageSize;
+		this.sampler = sampler;
 	}
 
 	/**
@@ -53,10 +59,10 @@ public class ProcessTableRenderer {
 	 */
 	public static int getHeaderAndFooterLength() {
 		int length = 0;
-		length += Header.getRowsCount();//header (system information)
-		length += 1;//table headerc (PID, NAME, etc.)
-		length += "-- Showing abc-def of xyz --".length() / TerminalSize.getColumns() + 1;//table footer (-- Showing x-y of z --)
-		length += keyBindings.length() / TerminalSize.getColumns() + 1;//keybindings text (Use j/k to scroll, etc.)
+		length += Header.getRowsCount(); // header (system information)
+		length += 1; // table header (PID, NAME, etc.)
+		length += "-- Showing abc-def of xyz --".length() / TerminalSize.getColumns() + 1; // footer
+		length += keyBindings.length() / TerminalSize.getColumns() + 1; // keybindings text
 		return length;
 	}
 
@@ -68,8 +74,11 @@ public class ProcessTableRenderer {
 	 * @param sortBy the column currently used for sorting
 	 * @param sortAsc true if sorting ascending, false if descending
 	 * @param scrollIndex starting index for visible rows
+	 * @param uptime system uptime in hours (cached)
+	 * @param load system load average (cached)
 	 */
-	public void draw(List<ProcessRow> processes, List<InfoType> infoTypes, InfoType sortBy, boolean sortAsc, int scrollIndex) {
+	public void draw(List<ProcessRow> processes, List<InfoType> infoTypes, InfoType sortBy, boolean sortAsc, int scrollIndex,
+					 double uptime, String load) {
 		TerminalSize terminalSize = new TerminalSize();
 		int total = processes.size();
 		int end = Math.min(scrollIndex + pageSize, total);
@@ -78,12 +87,18 @@ public class ProcessTableRenderer {
 		System.out.print("\033[H\033[2J");
 		System.out.flush();
 
-		Header.draw();// print header
-		printHeader(infoTypes, sortBy, sortAsc);// print table header
+		// Draw header with cached SystemSampler
+		Header.draw(sampler, uptime, load);
+
+		// Print table header
+		printHeader(infoTypes, sortBy, sortAsc);
+
+		// Print visible process rows
 		for (int i = scrollIndex; i < end; i++) {
-			printProcessRow(processes.get(i), infoTypes);// print table rows
+			printProcessRow(processes.get(i), infoTypes);
 		}
 
+		// Print footer
 		String spaces = " ".repeat(Math.max(0, (terminalSize.getColumns() - 25) / 2));
 		System.out.printf("\r%s%s-- Showing %d-%d of %d --%s\n",
 				spaces, footerColor, scrollIndex + 1, end, total, clearStyling);

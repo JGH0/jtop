@@ -4,8 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 import jtop.Isystem.IMemoryInfo;
 
 /**
@@ -18,11 +16,33 @@ import jtop.Isystem.IMemoryInfo;
  *	 <li>Memory usage percentage by the system</li>
  *	 <li>Memory usage percentage of a specific process (by PID)</li>
  * </ul>
+ *
+ * <p>
+ * Performance notes:
+ * <ul>
+ *	 <li>/proc/meminfo is cached for a short time window</li>
+ *	 <li>No regex usage</li>
+ *	 <li>No temporary Maps or Lists</li>
+ * </ul>
+ * </p>
  */
 public class MemoryInfo implements IMemoryInfo {
 
 	/** Typical memory page size on Linux in bytes. */
 	private static final long PAGE_SIZE = 4096;
+
+	/** Cache validity in milliseconds. */
+	private static final long MEMINFO_CACHE_MS = 500;
+
+	private static long lastRead;
+
+	private static long memTotalKb;
+	private static long memAvailableKb;
+	private static long memFreeKb;
+	private static long buffersKb;
+	private static long cachedKb;
+	private static long sReclaimableKb;
+	private static long shmemKb;
 
 	/**
 	 * Returns the memory usage percentage of a process.
@@ -33,23 +53,23 @@ public class MemoryInfo implements IMemoryInfo {
 	 */
 	@Override
 	public double getMemoryPercent(long pid) throws IOException {
+		readMemInfoCached();
+
 		Path statmPath = Path.of("/proc", String.valueOf(pid), "statm");
 		if (!Files.exists(statmPath)) {
 			throw new IOException("Process with PID " + pid + " does not exist");
 		}
 
 		String statm = Files.readString(statmPath).trim();
-		String[] parts = statm.split("\\s+");
-		if (parts.length < 2) {
+		int space = statm.indexOf(' ');
+		if (space < 0) {
 			throw new IOException("Unexpected format in /proc/" + pid + "/statm");
 		}
 
-		long rssPages = Long.parseLong(parts[1]);
+		long rssPages = Long.parseLong(statm.substring(space + 1).trim().split(" ")[0]);
 		long processKb = (rssPages * PAGE_SIZE) / 1024;
 
-		long totalKb = getTotalMemoryKb();
-		double percent = (processKb / (double) totalKb) * 100.0;
-
+		double percent = (processKb / (double) memTotalKb) * 100.0;
 		return round(percent, 3);
 	}
 
@@ -61,16 +81,15 @@ public class MemoryInfo implements IMemoryInfo {
 	 */
 	@Override
 	public double getMemoryUsage() throws IOException {
-		Map<String, Long> mem = readMemInfo();
+		readMemInfoCached();
 
-		long total = mem.getOrDefault("MemTotal", 1L);
-		long free = mem.getOrDefault("MemFree", 0L)
-				+ mem.getOrDefault("Buffers", 0L)
-				+ mem.getOrDefault("Cached", 0L)
-				+ mem.getOrDefault("SReclaimable", 0L)
-				- mem.getOrDefault("Shmem", 0L);
+		long free = memFreeKb
+				+ buffersKb
+				+ cachedKb
+				+ sReclaimableKb
+				- shmemKb;
 
-		double usedPercent = 100.0 * (total - free) / total;
+		double usedPercent = 100.0 * (memTotalKb - free) / memTotalKb;
 		return round(usedPercent, 2);
 	}
 
@@ -82,12 +101,8 @@ public class MemoryInfo implements IMemoryInfo {
 	 */
 	@Override
 	public long getTotalMemoryBytes() throws IOException {
-		for (String line : Files.readAllLines(Path.of("/proc/meminfo"))) {
-			if (line.startsWith("MemTotal:")) {
-				return Long.parseLong(line.replaceAll("\\D+", "")) * 1024;
-			}
-		}
-		return 0;
+		readMemInfoCached();
+		return memTotalKb * 1024;
 	}
 
 	/**
@@ -98,48 +113,63 @@ public class MemoryInfo implements IMemoryInfo {
 	 */
 	@Override
 	public long getAvailableMemoryBytes() throws IOException {
-		long total = 0, available = 0;
-		for (String line : Files.readAllLines(Path.of("/proc/meminfo"))) {
-			if (line.startsWith("MemTotal:"))
-				total = Long.parseLong(line.replaceAll("\\D+", "")) * 1024;
-			else if (line.startsWith("MemAvailable:"))
-				available = Long.parseLong(line.replaceAll("\\D+", "")) * 1024;
-		}
-		return total - available;
+		readMemInfoCached();
+		return (memTotalKb - memAvailableKb) * 1024;
 	}
 
-	/** Helper: Reads /proc/meminfo into a map of key → value (in kB). */
-	private static Map<String, Long> readMemInfo() throws IOException {
-		Map<String, Long> mem = new HashMap<>();
+	/**
+	 * Reads /proc/meminfo and caches values for a short time window.
+	 */
+	private static void readMemInfoCached() throws IOException {
+		long now = System.currentTimeMillis();
+		if (now - lastRead < MEMINFO_CACHE_MS) {
+			return;
+		}
+
 		try (BufferedReader br = Files.newBufferedReader(Path.of("/proc/meminfo"))) {
 			String line;
 			while ((line = br.readLine()) != null) {
-				String[] parts = line.split(":");
-				if (parts.length >= 2) {
-					String key = parts[0].trim();
-					String val = parts[1].replaceAll("\\D+", "");
-					if (!val.isEmpty()) {
-						mem.put(key, Long.parseLong(val));
-					}
+				if (line.startsWith("MemTotal:")) {
+					memTotalKb = parseKb(line);
+				} else if (line.startsWith("MemAvailable:")) {
+					memAvailableKb = parseKb(line);
+				} else if (line.startsWith("MemFree:")) {
+					memFreeKb = parseKb(line);
+				} else if (line.startsWith("Buffers:")) {
+					buffersKb = parseKb(line);
+				} else if (line.startsWith("Cached:")) {
+					cachedKb = parseKb(line);
+				} else if (line.startsWith("SReclaimable:")) {
+					sReclaimableKb = parseKb(line);
+				} else if (line.startsWith("Shmem:")) {
+					shmemKb = parseKb(line);
 				}
 			}
 		}
-		return mem;
+
+		lastRead = now;
 	}
 
-	/** Helper: Retrieves MemTotal from /proc/meminfo. */
-	private static long getTotalMemoryKb() throws IOException {
-		try (BufferedReader br = Files.newBufferedReader(Path.of("/proc/meminfo"))) {
-			String line = br.readLine();
-			if (line != null && line.startsWith("MemTotal")) {
-				return Long.parseLong(line.replaceAll("\\D+", ""));
-			}
+	/**
+	 * Parses a line of /proc/meminfo and returns the value in kB.
+	 */
+	private static long parseKb(String line) {
+		int i = line.indexOf(':') + 1;
+		while (line.charAt(i) == ' ') {
+			i++;
 		}
-		throw new IOException("Cannot read total memory from /proc/meminfo");
+
+		long val = 0;
+		while (i < line.length() && Character.isDigit(line.charAt(i))) {
+			val = val * 10 + (line.charAt(i++) - '0');
+		}
+		return val;
 	}
 
-	/** Helper: Rounds a double value to the given number of decimal places.
-	 * @return returns the value to the desired lenght
+	/**
+	 * Rounds a double value to the given number of decimal places.
+	 *
+	 * @return returns the value to the desired length
 	 */
 	private static double round(double val, int decimals) {
 		double factor = Math.pow(10, decimals);

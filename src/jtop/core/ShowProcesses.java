@@ -1,36 +1,30 @@
 package jtop.core;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import jtop.Isystem.ICpuInfo;
 import jtop.Isystem.IMemoryInfo;
 import jtop.Isystem.IPathInfo;
+import jtop.Isystem.IUptime;
+import jtop.Isystem.ITemperatureInfo;
 import jtop.config.Config;
 import jtop.terminal.TerminalSize;
 import jtop.system.Feature;
 import jtop.system.SystemInfoFactory;
+import jtop.system.linux.SystemSampler;
 
 /**
  * Core class responsible for managing, sorting, and displaying running processes.
- * <p>
- * Implements {@link IRefreshable} so it can be refreshed periodically.
- * <p>
- * Responsibilities:
- * <ul>
- *     <li>Fetch all running processes via {@link ProcessHandle}.</li>
- *     <li>Cache process information for efficient display.</li>
- *     <li>Sort processes based on user-selected criteria (CPU, memory, PID, etc.).</li>
- *     <li>Handle scrolling and pagination for terminal display.</li>
- *     <li>Coordinate with {@link ProcessTableRenderer} to render formatted output.</li>
- * </ul>
  */
 public class ShowProcesses implements IRefreshable {
 	private final List<InfoType> infoTypes;
 	private final Config config = new Config();
 
 	private InfoType sortBy = InfoType.CPU;
-	private boolean sortAsc = config.getBoolean("table.sorting.ASC", true);
+	private boolean sortAsc = config.getBoolean("table.sorting.ASC", false);
 
 	private int scrollIndex = 0;
 	private int pageSize;
@@ -38,65 +32,75 @@ public class ShowProcesses implements IRefreshable {
 
 	private List<ProcessRow> cachedProcesses = new ArrayList<>();
 
+	// system sampler for cached CPU, memory, temps
+	private final SystemSampler sampler = new SystemSampler();
+
 	/**
 	 * Constructs a ShowProcesses instance with the specified columns to display.
-	 *
-	 * @param infos Varargs of {@link InfoType} representing columns to display (PID, NAME, CPU, MEMORY, etc.)
 	 */
 	public ShowProcesses(InfoType... infos) {
 		infoTypes = List.of(infos);
 	}
 
 	/**
-	 * Refreshes the cached list of process rows.
-	 * Fetches all running processes, sorts them according to the current sort criteria,
-	 * and builds {@link ProcessRow} objects containing CPU, memory, and other stats.
-	 *
-	 * @throws Exception if process information cannot be read
+	 * Refreshes the cached list of process rows and system sampler.
 	 */
 	public void refreshProcesses() throws Exception {
+		// Fetch system features
+		IUptime uptimeInfo = SystemInfoFactory.getFeature(Feature.UPTIME).map(f -> (IUptime) f).orElse(null);
+		ICpuInfo cpuInfo = SystemInfoFactory.getFeature(Feature.CPU).map(f -> (ICpuInfo) f).orElse(null);
+		IMemoryInfo memoryInfo = SystemInfoFactory.getFeature(Feature.MEMORY).map(f -> (IMemoryInfo) f).orElse(null);
+		ITemperatureInfo tempInfo = SystemInfoFactory.getFeature(Feature.TEMPERATURE).map(f -> (ITemperatureInfo) f).orElse(null);
+		IPathInfo pathInfo = SystemInfoFactory.getFeature(Feature.PROCESS).map(f -> (IPathInfo) f).orElse(null);
+
+		if (pathInfo instanceof jtop.system.linux.PathInfo pi) {
+			pi.clearCache();
+		}
+
+		// Update system sampler
+		sampler.refresh(cpuInfo, memoryInfo, tempInfo);
+
+		// cache memory usage per process
+		Map<Long, Double> memCache = memoryInfo != null ? new HashMap<>() : null;
+
+		// fetch all processes and sort
 		List<ProcessHandle> processes = new ArrayList<>(ProcessHandle.allProcesses().toList());
 		processes.sort(ProcessSorter.getComparator(sortBy, sortAsc));
 
-		List<ProcessRow> rows = new ArrayList<>();
-
-		// dynamically get feature implementations
-		ICpuInfo cpuInfo = SystemInfoFactory.getFeature(Feature.CPU)
-			.map(f -> (ICpuInfo) f)
-			.orElse(null);
-
-		IMemoryInfo memoryInfo = SystemInfoFactory.getFeature(Feature.MEMORY)
-			.map(f -> (IMemoryInfo) f)
-			.orElse(null);
-
-		IPathInfo pathInfo = SystemInfoFactory.getFeature(Feature.PROCESS)
-			.map(f -> (IPathInfo) f)
-			.orElse(null);
+		List<ProcessRow> rows = new ArrayList<>(processes.size());
 
 		for (ProcessHandle ph : processes) {
+			long pid = ph.pid();
 			try {
-				long pid = ph.pid();
 				String name = pathInfo != null ? safe(pathInfo.getName(pid)) : "?";
 				String path = pathInfo != null ? safe(pathInfo.getPath(pid)) : "?";
 				String user = ph.info().user().orElse("Unknown");
+
 				String cpuPercent = cpuInfo != null ? String.valueOf(safeCpu(cpuInfo, pid)) : "?";
-				String memPercent = memoryInfo != null ? String.valueOf(safeMemory(memoryInfo, pid)) : "?";
+
+				String memPercent;
+				if (memoryInfo != null) {
+					Double cached = memCache.get(pid);
+					if (cached == null) {
+						double val = safeMemory(memoryInfo, pid);
+						memCache.put(pid, val);
+						memPercent = String.valueOf(val);
+					} else {
+						memPercent = String.valueOf(cached);
+					}
+				} else {
+					memPercent = "?";
+				}
 
 				rows.add(new ProcessRow(pid, name, path, user, cpuPercent, memPercent));
-			} catch (Exception e) {
-				// ignore processes we cannot read
-			}
+			} catch (Exception ignored) {}
 		}
 
 		cachedProcesses = rows;
 	}
 
 	/**
-	 * Draws the process table to the terminal.
-	 * Calculates terminal size, cell width, and page size.
-	 * Automatically refreshes the process cache if empty.
-	 *
-	 * @throws Exception if rendering or process retrieval fails
+	 * Draws the process table to the terminal using cached system sampler.
 	 */
 	public void draw() throws Exception {
 		TerminalSize terminalSize = new TerminalSize();
@@ -107,43 +111,31 @@ public class ShowProcesses implements IRefreshable {
 			refreshProcesses();
 		}
 
-		new ProcessTableRenderer(config, cellWidth, pageSize)
-			.draw(cachedProcesses, infoTypes, sortBy, sortAsc, scrollIndex);
+		double uptime = 0.0;
+		String load = "?";
+
+		try {
+			IUptime uptimeInfo = SystemInfoFactory.getFeature(Feature.UPTIME).map(f -> (IUptime) f).orElse(null);
+			ICpuInfo cpuInfo = SystemInfoFactory.getFeature(Feature.CPU).map(f -> (ICpuInfo) f).orElse(null);
+			if (uptimeInfo != null) uptime = uptimeInfo.getSystemUptime('h');
+			if (cpuInfo != null) load = cpuInfo.getLoadAverage();
+		} catch (Exception ignored) {}
+
+		new ProcessTableRenderer(config, cellWidth, pageSize, sampler)
+				.draw(cachedProcesses, infoTypes, sortBy, sortAsc, scrollIndex, uptime, load);
 	}
 
-	/**
-	 * Scrolls the display up by one row.
-	 */
-	public void scrollUp() {
-		if (scrollIndex > 0) scrollIndex--;
-	}
+	public void scrollUp() { if (scrollIndex > 0) scrollIndex--; }
 
-	/**
-	 * Scrolls the display down by one row.
-	 */
 	public void scrollDown() {
 		if (scrollIndex + pageSize < cachedProcesses.size()) scrollIndex++;
 	}
 
-	/**
-	 * Changes the sorting column based on a mouse click's character position.
-	 * Toggles ascending/descending if the same column is clicked again.
-	 *
-	 * @param charPosition Horizontal character position of the click in the terminal
-	 * @throws Exception if refreshing processes fails
-	 */
 	public void changeSortByClick(int charPosition) throws Exception {
 		int columnIndex = charPosition / cellWidth;
 		changeSort(columnIndex);
 	}
 
-	/**
-	 * Changes the sorting column based on the index entered.
-	 * Toggles ascending/descending if the same column is clicked again.
-	 *
-	 * @param columnIndex Horizontal character position of the click in the terminal
-	 * @throws Exception if refreshing processes fails
-	 */
 	public void changeSort(int columnIndex) throws Exception {
 		if (columnIndex >= 0 && columnIndex < infoTypes.size()) {
 			InfoType newSort = infoTypes.get(columnIndex);
@@ -153,43 +145,16 @@ public class ShowProcesses implements IRefreshable {
 		}
 	}
 
-	/**
-	 * Safely returns a non-null string.
-	 *
-	 * @param s Input string
-	 * @return Original string if non-null, otherwise "?"
-	 */
-	private String safe(String s) {
-		return s != null ? s : "?";
-	}
+	private String safe(String s) { return s != null ? s : "?"; }
 
-	/**
-	 * Safely retrieves CPU usage, returns 0.0 if unavailable.
-	 */
 	private static double safeCpu(ICpuInfo cpu, long pid) {
-		try {
-			return cpu.getCpuPercent(pid);
-		} catch (Exception e) {
-			return 0.0;
-		}
+		try { return cpu.getCpuPercent(pid); } catch (Exception e) { return 0.0; }
 	}
 
-	/**
-	 * Safely retrieves memory usage, returns 0.0 if unavailable.
-	 */
 	private static double safeMemory(IMemoryInfo mem, long pid) {
-		try {
-			return mem.getMemoryPercent(pid);
-		} catch (Exception e) {
-			return 0.0;
-		}
+		try { return mem.getMemoryPercent(pid); } catch (Exception e) { return 0.0; }
 	}
 
-	/**
-	 * Refreshes the process display and cached data.
-	 * <p>
-	 * Implements {@link IRefreshable#refresh()}, so it can be used with {@link RefreshThread}.
-	 */
 	@Override
 	public void refresh() {
 		try {
